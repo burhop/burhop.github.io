@@ -1,0 +1,12 @@
+# Dependencies
+/node_modules
+/website/node_modules
+/website/build
+
+# Environments
+.env*
+!/.env.example
+
+# System files
+.DS_Store
+*.Zone.Identifier
