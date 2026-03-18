@@ -27,10 +27,10 @@ class Player {
     this.scene.add(this.mesh);
 
     // ── Wizard sprite (billboard) ──────────────────────
-    const tex = SpriteLoader.load('img/wizard.png', { tolerance: 60 });
+    const tex = new THREE.TextureLoader().load('img/wizard.png');
     const spriteMat = new THREE.SpriteMaterial({
       map: tex, transparent: true,
-      blending: THREE.NormalBlending,
+      blending: THREE.AdditiveBlending,
       depthWrite: false
     });
     this.sprite = new THREE.Sprite(spriteMat);
