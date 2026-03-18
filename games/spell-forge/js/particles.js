@@ -1,168 +1,218 @@
-/* particles.js — THREE.js Particle System */
+/* particles.js — Enhanced particle system with spell trails */
 const Particles = {
   systems: [],
+  trails: [],   // continuous per-projectile trails
   scene: null,
 
   init(scene) {
     this.scene = scene;
   },
 
-  // Create a burst of particles at a position
-  burst(position, color, count, speed) {
+  // ── BURST ──────────────────────────────────────────────────
+  burst(position, color, count, speed, lifetime = 0.9) {
     const geo = new THREE.BufferGeometry();
-    const positions = [];
-    const velocities = [];
+    const positions  = new Float32Array(count * 3);
+    const velocities = new Float32Array(count * 3);
 
     for (let i = 0; i < count; i++) {
-      positions.push(position.x, position.y + 0.5, position.z);
+      positions[i*3]   = position.x;
+      positions[i*3+1] = position.y + 0.5;
+      positions[i*3+2] = position.z;
+
       const theta = Math.random() * Math.PI * 2;
-      const phi = Math.random() * Math.PI;
-      const s = speed * (0.5 + Math.random() * 0.5);
-      velocities.push(
-        Math.sin(phi) * Math.cos(theta) * s,
-        Math.cos(phi) * s * 0.5 + Math.random() * speed * 0.5,
-        Math.sin(phi) * Math.sin(theta) * s
-      );
+      const phi   = Math.acos(2 * Math.random() - 1);
+      const s = speed * (0.4 + Math.random() * 0.6);
+      velocities[i*3]   = Math.sin(phi) * Math.cos(theta) * s;
+      velocities[i*3+1] = Math.abs(Math.cos(phi)) * s * 0.9 + 1;
+      velocities[i*3+2] = Math.sin(phi) * Math.sin(theta) * s;
     }
 
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const mat = new THREE.PointsMaterial({
-      color: color,
-      size: 0.25,
-      transparent: true,
-      opacity: 1,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
+      color, size: 0.28, transparent: true, opacity: 1,
+      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
     });
-
-    const points = new THREE.Points(geo, mat);
-    this.scene.add(points);
-
-    this.systems.push({
-      points, velocities,
-      age: 0, lifetime: 0.8,
-      posArray: positions.slice()
-    });
+    const pts = new THREE.Points(geo, mat);
+    this.scene.add(pts);
+    this.systems.push({ pts, velocities, age: 0, lifetime, isAmbient: false, isLine: false });
   },
 
-  // Lightning arc between two points
-  lightning(from, to, color) {
-    const points = [];
-    const segments = 8;
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments;
-      const x = from.x + (to.x - from.x) * t + (i > 0 && i < segments ? (Math.random() - 0.5) * 2 : 0);
-      const y = from.y + (to.y - from.y) * t + (i > 0 && i < segments ? (Math.random() - 0.5) * 1 : 0);
-      const z = from.z + (to.z - from.z) * t + (i > 0 && i < segments ? (Math.random() - 0.5) * 2 : 0);
-      points.push(new THREE.Vector3(x, y, z));
+  // ── SHOCKWAVE RING ──────────────────────────────────────────
+  ring(position, color, radius = 4) {
+    const pts = 64;
+    const positions = [];
+    for (let i = 0; i <= pts; i++) {
+      const a = (i / pts) * Math.PI * 2;
+      positions.push(new THREE.Vector3(Math.cos(a) * 0.01, 0.05, Math.sin(a) * 0.01));
     }
+    const geo = new THREE.BufferGeometry().setFromPoints(positions);
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
+    const line = new THREE.LineLoop(geo, mat);
+    line.position.copy(position);
+    line.position.y = 0.1;
+    this.scene.add(line);
+    this.systems.push({ isLine: true, isRing: true, points: line, age: 0, lifetime: 0.5, maxRadius: radius });
+  },
 
-    const geo = new THREE.BufferGeometry().setFromPoints(points);
-    const mat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 1, blending: THREE.AdditiveBlending });
+  // ── LIGHTNING ARC ──────────────────────────────────────────
+  lightning(from, to, color) {
+    const segs = 10;
+    const pts  = [];
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      const jitter = i > 0 && i < segs ? 1.5 : 0;
+      pts.push(new THREE.Vector3(
+        from.x + (to.x - from.x) * t + (Math.random() - 0.5) * jitter,
+        from.y + (to.y - from.y) * t + (Math.random() - 0.5) * jitter * 0.5,
+        from.z + (to.z - from.z) * t + (Math.random() - 0.5) * jitter
+      ));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, linewidth: 2 });
     const line = new THREE.Line(geo, mat);
     this.scene.add(line);
+    this.systems.push({ isLine: true, isRing: false, points: line, age: 0, lifetime: 0.35 });
 
-    this.systems.push({
-      isLine: true,
-      points: line,
-      age: 0,
-      lifetime: 0.3
-    });
+    // Secondary thinner arc
+    const pts2 = [];
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      pts2.push(new THREE.Vector3(
+        from.x + (to.x - from.x) * t + (Math.random() - 0.5) * 2.5,
+        from.y + (to.y - from.y) * t + (Math.random() - 0.5) * 1,
+        from.z + (to.z - from.z) * t + (Math.random() - 0.5) * 2.5
+      ));
+    }
+    const geo2 = new THREE.BufferGeometry().setFromPoints(pts2);
+    const mat2 = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
+    const line2 = new THREE.Line(geo2, mat2);
+    this.scene.add(line2);
+    this.systems.push({ isLine: true, isRing: false, points: line2, age: 0, lifetime: 0.25 });
 
-    // Also burst at impact
-    this.burst(to, color, 40, 5);
+    this.burst(to, color, 50, 5);
+    this.ring(to, color, 3);
   },
 
-  // Ambient floating motes
+  // ── SPELL MUZZLE FLASH ─────────────────────────────────────
+  muzzle(position, color) {
+    this.burst(position, color, 40, 6, 0.4);
+    this.ring(position, color, 2.5);
+  },
+
+  // ── AMBIENT FLOATING MOTES ─────────────────────────────────
   createAmbient(count) {
     const geo = new THREE.BufferGeometry();
-    const positions = [];
-    const velocities = [];
-
+    const positions  = new Float32Array(count * 3);
+    const velocities = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      positions.push(
-        (Math.random() - 0.5) * 50,
-        Math.random() * 10,
-        (Math.random() - 0.5) * 50
-      );
-      velocities.push(
-        (Math.random() - 0.5) * 0.5,
-        Math.random() * 0.3 + 0.1,
-        (Math.random() - 0.5) * 0.5
-      );
+      const angle = Math.random() * Math.PI * 2;
+      const r = 5 + Math.random() * 22;
+      positions[i*3]   = Math.cos(angle) * r;
+      positions[i*3+1] = Math.random() * 12;
+      positions[i*3+2] = Math.sin(angle) * r;
+      velocities[i*3]   = (Math.random() - 0.5) * 0.4;
+      velocities[i*3+1] = 0.15 + Math.random() * 0.25;
+      velocities[i*3+2] = (Math.random() - 0.5) * 0.4;
     }
-
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const mat = new THREE.PointsMaterial({
-      color: 0x8800ff, size: 0.1,
-      transparent: true, opacity: 0.6,
+      color: 0x7c3aed, size: 0.12, transparent: true, opacity: 0.7,
       blending: THREE.AdditiveBlending, depthWrite: false
     });
-    const mesh = new THREE.Points(geo, mat);
-    this.scene.add(mesh);
-
-    this.systems.push({
-      points: mesh, velocities,
-      age: 0, lifetime: Infinity,
-      isAmbient: true,
-      posArray: positions.slice()
-    });
+    const pts = new THREE.Points(geo, mat);
+    this.scene.add(pts);
+    this.systems.push({ pts, velocities, age: 0, lifetime: Infinity, isAmbient: true, isLine: false });
   },
 
+  // ── CONTINUOUS TRAIL on a Projectile ──────────────────────
+  startTrail(projectile, color) {
+    this.trails.push({ projectile, color, timer: 0 });
+  },
+
+  stopTrail(projectile) {
+    this.trails = this.trails.filter(t => t.projectile !== projectile);
+  },
+
+  // ── UPDATE ─────────────────────────────────────────────────
   update(delta) {
+    // Emit trail particles
+    for (const trail of this.trails) {
+      if (!trail.projectile.active) { this.stopTrail(trail.projectile); continue; }
+      trail.timer -= delta;
+      if (trail.timer <= 0) {
+        trail.timer = 0.04;
+        this.burst(trail.projectile.mesh.position, trail.color, 6, 1.5, 0.35);
+      }
+    }
+
+    // Process systems
     this.systems = this.systems.filter(sys => {
       sys.age += delta;
 
       if (sys.isLine) {
-        sys.points.material.opacity = 1 - sys.age / sys.lifetime;
+        const t = sys.age / sys.lifetime;
+        sys.points.material.opacity = Math.max(0, 1 - t);
+        if (sys.isRing) {
+          const r = sys.maxRadius * t;
+          const posArr = sys.points.geometry.attributes.position.array;
+          const ptCount = posArr.length / 3;
+          for (let i = 0; i < ptCount; i++) {
+            const a = (i / (ptCount-1)) * Math.PI * 2;
+            posArr[i*3]   = Math.cos(a) * r;
+            posArr[i*3+2] = Math.sin(a) * r;
+          }
+          sys.points.geometry.attributes.position.needsUpdate = true;
+        }
         if (sys.age >= sys.lifetime) {
           this.scene.remove(sys.points);
+          sys.points.geometry.dispose();
+          sys.points.material.dispose();
           return false;
         }
         return true;
       }
 
-      if (sys.age >= sys.lifetime && !sys.isAmbient) {
-        this.scene.remove(sys.points);
-        sys.points.geometry.dispose();
-        sys.points.material.dispose();
+      // Points system
+      if (!sys.isAmbient && sys.age >= sys.lifetime) {
+        this.scene.remove(sys.pts);
+        sys.pts.geometry.dispose();
+        sys.pts.material.dispose();
         return false;
       }
 
-      const posAttr = sys.points.geometry.attributes.position;
-      const count = posAttr.count;
-      const t = sys.isAmbient ? 0 : sys.age / sys.lifetime;
+      const posAttr = sys.pts.geometry.attributes.position;
+      const count   = posAttr.count;
+      const arr     = posAttr.array;
 
       for (let i = 0; i < count; i++) {
-        posAttr.array[i * 3]     += sys.velocities[i * 3]     * delta;
-        posAttr.array[i * 3 + 1] += sys.velocities[i * 3 + 1] * delta;
-        posAttr.array[i * 3 + 2] += sys.velocities[i * 3 + 2] * delta;
+        arr[i*3]   += sys.velocities[i*3]   * delta;
+        arr[i*3+1] += sys.velocities[i*3+1] * delta;
+        arr[i*3+2] += sys.velocities[i*3+2] * delta;
 
         if (sys.isAmbient) {
-          // Wrap particles
-          if (posAttr.array[i * 3 + 1] > 12) posAttr.array[i * 3 + 1] = 0;
+          if (arr[i*3+1] > 14) arr[i*3+1] = Math.random() * 0.5;
         } else {
-          // Gravity
-          sys.velocities[i * 3 + 1] -= 4 * delta;
-          if (posAttr.array[i * 3 + 1] < 0) posAttr.array[i * 3 + 1] = 0;
+          sys.velocities[i*3+1] -= 6 * delta; // gravity
+          if (arr[i*3+1] < 0.05) arr[i*3+1] = 0.05;
         }
       }
+      posAttr.needsUpdate = true;
 
       if (!sys.isAmbient) {
-        sys.points.material.opacity = Math.max(0, 1 - t * 1.2);
-        sys.points.material.size = 0.25 * (1 - t * 0.5);
+        const t = sys.age / sys.lifetime;
+        sys.pts.material.opacity = Math.max(0, 1 - t * 1.1);
+        sys.pts.material.size    = 0.28 * (1 - t * 0.4);
       }
-
-      posAttr.needsUpdate = true;
       return true;
     });
   },
 
   clear() {
     this.systems.forEach(sys => {
-      this.scene.remove(sys.points);
+      const obj = sys.pts || sys.points;
+      if (obj) this.scene.remove(obj);
     });
     this.systems = [];
+    this.trails = [];
   }
 };

@@ -17,42 +17,50 @@ const Game = {
   get enemies() { return this.waveManager ? this.waveManager.enemies : []; },
 
   init() {
-    // --- Three.js setup ---
     const canvas = document.getElementById('game-canvas');
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = false;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.15;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x060614);
-    this.scene.fog = new THREE.Fog(0x060614, 40, 80);
+    this.scene.background = new THREE.Color(0x02020e);
+    this.scene.fog = new THREE.FogExp2(0x03030f, 0.016);
 
-    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
-    this.clock = new THREE.Clock();
+    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
+    this.clock  = new THREE.Clock();
 
     // --- Lighting ---
-    this.scene.add(new THREE.AmbientLight(0x1a1040, 1.5));
-    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
-    sun.position.set(10, 20, 10);
+    this.scene.add(new THREE.AmbientLight(0x110822, 2.8));
+    const sun = new THREE.DirectionalLight(0xaa77ff, 0.6);
+    sun.position.set(8, 20, 8);
     this.scene.add(sun);
-    // Colored accent lights
-    const l1 = new THREE.PointLight(0xff00ff, 2, 60); l1.position.set( 25, 8,  25); this.scene.add(l1);
-    const l2 = new THREE.PointLight(0x00ffff, 2, 60); l2.position.set(-25, 8, -25); this.scene.add(l2);
-    const l3 = new THREE.PointLight(0x9933ff, 1.5, 40); l3.position.set(0, 15, 0); this.scene.add(l3);
+
+    // Animated accent lights
+    this.accentLights = [];
+    [
+      { color:0xff00cc, pos:[ 22,6, 22], i:4, d:55 },
+      { color:0x00ccff, pos:[-22,6,-22], i:4, d:55 },
+      { color:0x9933ff, pos:[ 22,6,-22], i:3, d:45 },
+      { color:0x00ff99, pos:[-22,6, 22], i:3, d:45 },
+    ].forEach(d => {
+      const l = new THREE.PointLight(d.color, d.i, d.d);
+      l.position.set(...d.pos);
+      this.scene.add(l);
+      this.accentLights.push({ light:l, basePos:[...d.pos], baseI:d.i });
+    });
 
     // --- Arena ---
     this._buildArena();
 
-    // --- Init subsystems ---
     Particles.init(this.scene);
-    Particles.createAmbient(200);
+    Particles.createAmbient(250);
 
-    // --- Gesture canvas ---
     const gestureCanvas = document.getElementById('gesture-canvas');
     Gestures.init(gestureCanvas, (gesture) => this._onGesture(gesture));
 
-    // --- Keyboard spells (1-5) ---
     window.addEventListener('keydown', (e) => {
       if (this.state !== 'PLAYING') return;
       const keyMap = { Digit1:'FIREBALL', Digit2:'ICE_SHARD', Digit3:'LIGHTNING', Digit4:'SHIELD', Digit5:'TORNADO' };
@@ -60,17 +68,14 @@ const Game = {
       if (e.code === 'Escape') this.pause();
     });
 
-    // --- Right-click camera drag ---
     window.addEventListener('mousedown', (e) => {
       if (e.button === 2) { this.rightMouseDown = true; this.lastMouseX = e.clientX; this.lastMouseY = e.clientY; }
     });
     window.addEventListener('mouseup', (e) => { if (e.button === 2) this.rightMouseDown = false; });
     window.addEventListener('mousemove', (e) => {
       if (this.rightMouseDown && this.state === 'PLAYING') {
-        const dx = e.clientX - this.lastMouseX;
-        const dy = e.clientY - this.lastMouseY;
-        this.camYaw   -= dx * 0.005;
-        this.camPitch  = Math.max(0.15, Math.min(1.1, this.camPitch + dy * 0.004));
+        this.camYaw   -= (e.clientX - this.lastMouseX) * 0.005;
+        this.camPitch  = Math.max(0.15, Math.min(1.1, this.camPitch + (e.clientY - this.lastMouseY) * 0.004));
       }
       this.lastMouseX = e.clientX; this.lastMouseY = e.clientY;
     });
@@ -78,17 +83,10 @@ const Game = {
     window.addEventListener('wheel', (e) => {
       if (this.state === 'PLAYING') this.camDist = Math.max(8, Math.min(25, this.camDist + e.deltaY * 0.02));
     });
-
-    // --- Right-click quick cast ---
     window.addEventListener('mouseup', (e) => {
-      if (e.button === 2 && !this.rightMouseDown && this.state === 'PLAYING') {
-        if (this.spellManager && this.spellManager.lastSpell) {
-          this._castSpell(this.spellManager.lastSpell);
-        }
-      }
+      if (e.button === 2 && !this.rightMouseDown && this.state === 'PLAYING' && this.spellManager && this.spellManager.lastSpell)
+        this._castSpell(this.spellManager.lastSpell);
     });
-
-    // --- Resize ---
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
@@ -96,62 +94,157 @@ const Game = {
       Gestures.resize();
     });
 
-    // --- UI init ---
     UI.init();
     UI.showScreen('menu-screen');
-
-    // Start render loop
     this._loop();
   },
 
   _buildArena() {
-    // Floor
-    const floorGeo = new THREE.PlaneGeometry(60, 60, 30, 30);
-    const floorMat = new THREE.MeshPhongMaterial({ color: 0x0d0d2b, shininess: 20 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
+    // ── Starfield ─────────────────────────────────────────
+    const starCount = 2200;
+    const sPosArr   = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi   = Math.acos(2 * Math.random() - 1);
+      const r     = 140 + Math.random() * 30;
+      sPosArr[i*3]   = Math.sin(phi)*Math.cos(theta)*r;
+      sPosArr[i*3+1] = Math.abs(Math.cos(phi))*r + 5;
+      sPosArr[i*3+2] = Math.sin(phi)*Math.sin(theta)*r;
+    }
+    const sGeo = new THREE.BufferGeometry();
+    sGeo.setAttribute('position', new THREE.BufferAttribute(sPosArr, 3));
+    this.scene.add(new THREE.Points(sGeo, new THREE.PointsMaterial({
+      color:0xffffff, size:0.5, transparent:true, opacity:0.85,
+      sizeAttenuation:true, blending:THREE.AdditiveBlending, depthWrite:false
+    })));
+
+    // Nebula colour clusters
+    [{ c:0x440088, cx:60,  cz:60  },
+     { c:0x003366, cx:-80, cz:40  },
+     { c:0x660033, cx:20,  cz:-90 }].forEach(d => {
+      const ng = new THREE.BufferGeometry();
+      const np = new Float32Array(300*3);
+      for (let i=0;i<300;i++){
+        np[i*3]   = d.cx + (Math.random()-0.5)*90;
+        np[i*3+1] = 45  + Math.random()*55;
+        np[i*3+2] = d.cz + (Math.random()-0.5)*90;
+      }
+      ng.setAttribute('position', new THREE.BufferAttribute(np,3));
+      this.scene.add(new THREE.Points(ng, new THREE.PointsMaterial({
+        color:d.c, size:1.9, transparent:true, opacity:0.22,
+        blending:THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true
+      })));
+    });
+
+    // ── Floor ─────────────────────────────────────────────
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(62,62),
+      new THREE.MeshPhongMaterial({ color:0x060618, shininess:50, specular:0x111133 })
+    );
+    floor.rotation.x = -Math.PI/2;
     this.scene.add(floor);
 
-    // Grid overlay
-    const gridHelper = new THREE.GridHelper(60, 30, 0x2d1b69, 0x1a0d3d);
-    gridHelper.position.y = 0.02;
-    this.scene.add(gridHelper);
+    // Bright teal grid
+    const g1 = new THREE.GridHelper(60, 20, 0x22d3ee, 0x22d3ee);
+    g1.position.y = 0.016;
+    g1.material.transparent = true; g1.material.opacity = 0.38;
+    g1.material.blending = THREE.AdditiveBlending;
+    this.scene.add(g1);
 
-    // Boundary walls (invisible, just glowing edges)
-    const edgeMat = new THREE.MeshBasicMaterial({ color: 0x7c3aed, transparent: true, opacity: 0.6 });
-    const edges = [
-      { pos:[0,5,30],  rot:[0,0,0],  size:[60,10,0.2] },
-      { pos:[0,5,-30], rot:[0,0,0],  size:[60,10,0.2] },
-      { pos:[30,5,0],  rot:[0,Math.PI/2,0], size:[60,10,0.2] },
-      { pos:[-30,5,0], rot:[0,Math.PI/2,0], size:[60,10,0.2] }
-    ];
-    edges.forEach(e => {
-      const geo = new THREE.BoxGeometry(...e.size);
-      const mesh = new THREE.Mesh(geo, edgeMat);
-      mesh.position.set(...e.pos);
-      mesh.rotation.set(...e.rot);
+    // Fine purple sub-grid
+    const g2 = new THREE.GridHelper(60, 60, 0x7c3aed, 0x7c3aed);
+    g2.position.y = 0.01;
+    g2.material.transparent = true; g2.material.opacity = 0.16;
+    g2.material.blending = THREE.AdditiveBlending;
+    this.scene.add(g2);
+
+    // ── Rotating rune rings ───────────────────────────────
+    this.runeRings = [];
+    [
+      { r:4,   t:0.06, c:0x22d3ee, s: 0.30 },
+      { r:8,   t:0.045,c:0x8b5cf6, s:-0.18 },
+      { r:14,  t:0.04, c:0x22d3ee, s: 0.12 },
+      { r:20,  t:0.035,c:0xf472b6, s:-0.08 },
+      { r:27,  t:0.07, c:0x7c3aed, s: 0.05 },
+    ].forEach(cfg => {
+      const geo  = new THREE.TorusGeometry(cfg.r, cfg.t, 4, 80);
+      const mat  = new THREE.MeshBasicMaterial({ color:cfg.c, transparent:true, opacity:0.7, blending:THREE.AdditiveBlending, depthWrite:false });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.rotation.x = Math.PI/2;
+      mesh.position.y = 0.02;
+      mesh.userData.speed = cfg.s;
       this.scene.add(mesh);
+      this.runeRings.push(mesh);
     });
 
-    // Corner pillars
-    const pillarGeo = new THREE.CylinderGeometry(0.8, 0.8, 12, 8);
-    const pillarMat = new THREE.MeshPhongMaterial({ color: 0x1e1b4b, emissive: 0x4c1d95, emissiveIntensity: 0.3 });
-    [[-30,-30],[30,-30],[-30,30],[30,30]].forEach(([x,z]) => {
-      const p = new THREE.Mesh(pillarGeo, pillarMat);
-      p.position.set(x, 6, z);
-      this.scene.add(p);
-      const l = new THREE.PointLight(0x7c3aed, 3, 20);
-      l.position.set(x, 8, z);
+    // ── Translucent energy walls ──────────────────────────
+    const wallFillMat  = new THREE.MeshBasicMaterial({ color:0x7c3aed, transparent:true, opacity:0.11, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false });
+    const wallEdgeMat  = new THREE.MeshBasicMaterial({ color:0xbb88ff, transparent:true, opacity:0.55, blending:THREE.AdditiveBlending });
+    [
+      { p:[0,8, 30], r:[0,0,0]         },
+      { p:[0,8,-30], r:[0,Math.PI,0]   },
+      { p:[30,8,0],  r:[0,-Math.PI/2,0]},
+      { p:[-30,8,0], r:[0, Math.PI/2,0]},
+    ].forEach(e => {
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(60,16,10,4), wallFillMat);
+      mesh.position.set(...e.p); mesh.rotation.set(...e.r);
+      this.scene.add(mesh);
+      const edge = new THREE.Mesh(new THREE.BoxGeometry(60,0.15,0.15), wallEdgeMat);
+      edge.position.set(e.p[0], 15.9, e.p[2]); edge.rotation.set(...e.r);
+      this.scene.add(edge);
+    });
+
+    // ── Ornate crystal pillars ────────────────────────────
+    const pillarColors = [0xcc44ff, 0x00ccff, 0xff44aa, 0x44ffcc];
+    [[-28,-28],[28,-28],[-28,28],[28,28]].forEach(([x,z],i) => {
+      const col = pillarColors[i];
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.6,0.9,14,8),
+        new THREE.MeshPhongMaterial({ color:0x1a0d33, emissive:col, emissiveIntensity:0.18 })
+      );
+      shaft.position.set(x,7,z);
+      this.scene.add(shaft);
+
+      // Crystal cap
+      const cap = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.95,0),
+        new THREE.MeshPhongMaterial({ color:col, emissive:col, emissiveIntensity:0.9, transparent:true, opacity:0.9, shininess:220 })
+      );
+      cap.position.set(x,14.6,z);
+      this.scene.add(cap);
+
+      // Glow light
+      const l = new THREE.PointLight(col, 5.5, 30);
+      l.position.set(x,14,z);
       this.scene.add(l);
+      this.accentLights.push({ light:l, basePos:[x,14,z], baseI:5.5 });
+
+      // Base ring
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(1.2, 0.1, 4, 32),
+        new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending })
+      );
+      ring.rotation.x = Math.PI/2;
+      ring.position.set(x,0.08,z);
+      this.scene.add(ring);
     });
 
-    // Central magic circle on floor
-    const circleGeo = new THREE.RingGeometry(2, 2.3, 64);
-    const circleMat = new THREE.MeshBasicMaterial({ color: 0x7c3aed, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
-    const circle = new THREE.Mesh(circleGeo, circleMat);
-    circle.rotation.x = -Math.PI / 2;
-    circle.position.y = 0.03;
-    this.scene.add(circle);
+    // ── Central magic sigil ───────────────────────────────
+    [2.5, 4.0, 5.8].forEach((r, i) => {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(r, r+0.09, 64),
+        new THREE.MeshBasicMaterial({ color: i%2===0 ? 0x22d3ee : 0x8b5cf6, side:THREE.DoubleSide, transparent:true, opacity:0.5, blending:THREE.AdditiveBlending })
+      );
+      ring.rotation.x = -Math.PI/2; ring.position.y = 0.03;
+      this.scene.add(ring);
+    });
+    [[1,0],[0,1],[0.707,0.707],[0.707,-0.707]].forEach(([dx,dz]) => {
+      const pts = [new THREE.Vector3(-dx*6, 0.03, -dz*6), new THREE.Vector3(dx*6, 0.03, dz*6)];
+      this.scene.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color:0x22d3ee, transparent:true, opacity:0.3, blending:THREE.AdditiveBlending })
+      ));
+    });
   },
 
   start() {
@@ -291,9 +384,20 @@ const Game = {
   _loop() {
     requestAnimationFrame(() => this._loop());
     const delta = Math.min(this.clock.getDelta(), 0.05);
+    const t = Date.now() * 0.001;
+
+    // ── Always animate arena ──────────────────────────────
+    if (this.runeRings) {
+      this.runeRings.forEach(ring => { ring.rotation.z += ring.userData.speed * delta; });
+    }
+    if (this.accentLights) {
+      this.accentLights.forEach((al, i) => {
+        al.light.intensity = al.baseI * (0.85 + Math.sin(t * 1.5 + i * 1.2) * 0.25);
+      });
+    }
 
     if (this.state === 'PLAYING' && this.player) {
-      const fwd = this._getCameraForward();
+      const fwd   = this._getCameraForward();
       const right = this._getCameraRight();
 
       this.player.update(delta, fwd, right);
@@ -302,7 +406,6 @@ const Game = {
       this.spellManager.checkCollisions(this.waveManager.enemies);
       Particles.update(delta);
 
-      // Wave completion check
       if (this.waveManager.waveDone) {
         this.waveManager.waveDone = false;
         this._waveReward();
@@ -310,15 +413,11 @@ const Game = {
 
       UI.update(this.player, this.spellManager, this.waveManager, this.score);
       this._updateCamera();
-    } else if (this.state !== 'PLAYING') {
-      // Still render scene in background
+    } else {
       Particles.update(delta);
-      this.renderer.render(this.scene, this.camera);
     }
 
-    if (this.state === 'PLAYING') {
-      this.renderer.render(this.scene, this.camera);
-    }
+    this.renderer.render(this.scene, this.camera);
   }
 };
 
