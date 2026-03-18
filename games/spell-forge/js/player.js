@@ -169,11 +169,11 @@ class Player {
 
       let tex;
       const absAngle = Math.abs(angle);
-      if (absAngle < Math.PI / 4) {
+      if (absAngle < Math.PI / 6) {
         // Camera and facing aligned → seeing front
         tex = this.texFront;
         this.sprite.scale.x = this.spriteW;
-      } else if (absAngle > 3 * Math.PI / 4) {
+      } else if (absAngle > 5 * Math.PI / 6) {
         // Opposite → seeing back
         tex = this.texBack;
         this.sprite.scale.x = this.spriteW;
@@ -242,6 +242,30 @@ class Player {
     document.getElementById('shield-indicator').classList.remove('hidden');
     Particles.burst(this.mesh.position.clone().add(new THREE.Vector3(0, 2, 0)), 0xbb66ff, 100, 7);
     Particles.ring(this.mesh.position.clone(), 0x9933ff, 5);
+
+    // ── Shield blast: knock back and damage enemies inside ───
+    const SHIELD_RADIUS = 2.5;
+    const KNOCKBACK     = 12;
+    const BLAST_DAMAGE  = 30;
+    if (typeof Game !== 'undefined' && Game.waveManager) {
+      Game.waveManager.enemies.forEach(e => {
+        if (!e.alive) return;
+        const dist = e.mesh.position.distanceTo(this.mesh.position);
+        if (dist < SHIELD_RADIUS) {
+          // Damage + stun
+          e.takeDamage(BLAST_DAMAGE, 'stun', 1.0);
+          // Knockback: push away from player
+          const pushDir = e.mesh.position.clone().sub(this.mesh.position);
+          pushDir.y = 0;
+          if (pushDir.length() < 0.01) pushDir.set(1, 0, 0); // fallback if overlapping
+          pushDir.normalize().multiplyScalar(KNOCKBACK);
+          e.mesh.position.add(pushDir);
+          // Visual feedback
+          Particles.burst(e.mesh.position.clone().add(new THREE.Vector3(0, 2, 0)), 0xbb66ff, 40, 5);
+          if (!e.alive) Game.onEnemyKilled();
+        }
+      });
+    }
   }
 
   deactivateShield() {

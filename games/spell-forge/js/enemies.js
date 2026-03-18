@@ -151,10 +151,10 @@ class Enemy {
 
         let tex;
         const absAngle = Math.abs(angle);
-        if (absAngle < Math.PI / 4) {
+        if (absAngle < Math.PI / 6) {
           tex = this.texFront;
           this.sprite.scale.x = this.spriteW;
-        } else if (absAngle > 3 * Math.PI / 4) {
+        } else if (absAngle > 5 * Math.PI / 6) {
           tex = this.texBack;
           this.sprite.scale.x = this.spriteW;
         } else {
