@@ -1,22 +1,13 @@
 /**
  * sprite-loader.js
- * Loads sprite images and automatically strips the background colour
- * by sampling the image corners, regardless of whether the background
- * is white, black, or any shade of grey.
- *
- * Returns a THREE.CanvasTexture that is updated once the image loads.
- * Use with THREE.NormalBlending (not AdditiveBlending) for correct rendering.
+ * Loads sprite images and removes the background using a BFS flood-fill
+ * from the 4 corners. Only pixels CONNECTED to the image edge that match
+ * the background colour are made transparent — internal bright areas of
+ * the character are left untouched.
  */
 const SpriteLoader = {
-  /**
-   * @param {string} src         - Path to the image file
-   * @param {object} opts
-   *   tolerance {number}        - Colour-distance threshold for background removal (default 55)
-   *   feather   {number}        - Multiplier beyond tolerance over which to feather edges (default 1.8)
-   */
-  load(src, { tolerance = 55, feather = 1.8 } = {}) {
+  load(src, { tolerance = 80, feather = 1.6 } = {}) {
     const canvas  = document.createElement('canvas');
-    // willReadFrequently avoids GPU readback penalty in Chrome
     const ctx     = canvas.getContext('2d', { willReadFrequently: true });
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -31,47 +22,84 @@ const SpriteLoader = {
       const imageData = ctx.getImageData(0, 0, w, h);
       const d = imageData.data;
 
-      // ── Detect background colour from border pixels ────────────
-      // Sample the perimeter (all 4 edges) in steps, average the result.
-      // This is far more robust than just 4 corners.
-      const sampleStep = Math.max(1, Math.floor(Math.min(w, h) / 20));
-      let bgR = 0, bgG = 0, bgB = 0, sampleCount = 0;
-
-      const sample = (x, y) => {
+      // ── Detect background colour from image corners ────────────
+      const samplePts = [
+        [0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1],
+        [Math.floor(w / 2), 0], [Math.floor(w / 2), h - 1],
+        [0, Math.floor(h / 2)], [w - 1, Math.floor(h / 2)]
+      ];
+      let bgR = 0, bgG = 0, bgB = 0;
+      samplePts.forEach(([x, y]) => {
         const i = (y * w + x) * 4;
         bgR += d[i]; bgG += d[i + 1]; bgB += d[i + 2];
-        sampleCount++;
-      };
+      });
+      bgR /= samplePts.length;
+      bgG /= samplePts.length;
+      bgB /= samplePts.length;
 
-      // Top and bottom rows
-      for (let x = 0; x < w; x += sampleStep) { sample(x, 0); sample(x, h - 1); }
-      // Left and right columns (skip corners already sampled)
-      for (let y = sampleStep; y < h - sampleStep; y += sampleStep) { sample(0, y); sample(w - 1, y); }
-
-      bgR /= sampleCount; bgG /= sampleCount; bgB /= sampleCount;
-
-      // ── Remove pixels close to the detected background colour ──
       const featherRange = tolerance * (feather - 1);
 
-      for (let i = 0; i < d.length; i += 4) {
-        const dr   = d[i]     - bgR;
-        const dg   = d[i + 1] - bgG;
-        const db   = d[i + 2] - bgB;
-        const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+      const colorDist = (i) => {
+        const dr = d[i]     - bgR;
+        const dg = d[i + 1] - bgG;
+        const db = d[i + 2] - bgB;
+        return Math.sqrt(dr * dr + dg * dg + db * db);
+      };
+
+      // ── BFS flood fill from all 4 corners ─────────────────────
+      // Only pixels reachable from a corner AND matching bg colour
+      // will be marked — character interior whites are safe.
+      const marked = new Uint8Array(w * h); // 1 = visited background
+      const queue  = new Int32Array(w * h); // flat pixel indices
+      let qHead = 0, qTail = 0;
+
+      const enqueue = (idx) => {
+        if (marked[idx]) return;
+        marked[idx] = 1;
+        queue[qTail++] = idx;
+      };
+
+      // Seed the 4 corners
+      enqueue(0);
+      enqueue(w - 1);
+      enqueue((h - 1) * w);
+      enqueue((h - 1) * w + w - 1);
+
+      while (qHead < qTail) {
+        const idx = queue[qHead++];
+        const dist = colorDist(idx * 4);
+
+        // Only spread if this pixel is within reach of bg colour
+        if (dist >= tolerance + featherRange) continue;
+
+        const x = idx % w;
+        const y = (idx - x) / w;
+
+        if (x > 0)     enqueue(idx - 1);
+        if (x < w - 1) enqueue(idx + 1);
+        if (y > 0)     enqueue(idx - w);
+        if (y < h - 1) enqueue(idx + w);
+      }
+
+      // ── Apply transparency to all marked pixels ────────────────
+      for (let idx = 0; idx < w * h; idx++) {
+        if (!marked[idx]) continue;
+        const i    = idx * 4;
+        const dist = colorDist(i);
 
         if (dist < tolerance) {
-          d[i + 3] = 0;                                              // fully transparent
+          d[i + 3] = 0;                                      // fully transparent
         } else if (dist < tolerance + featherRange) {
           const t = (dist - tolerance) / featherRange;
-          d[i + 3] = Math.round(255 * t * t);                       // smooth quadratic feather
+          d[i + 3] = Math.round(d[i + 3] * t * t);          // smooth feather
         }
-        // else: keep original alpha intact
       }
 
       ctx.putImageData(imageData, 0, 0);
-      texture.image = canvas;
+      texture.image     = canvas;
       texture.needsUpdate = true;
     };
+
     img.src = src;
     return texture;
   }
