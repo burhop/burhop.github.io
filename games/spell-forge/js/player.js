@@ -31,7 +31,7 @@ class Player {
     tex.colorSpace = THREE.SRGBColorSpace;
     const spriteMat = new THREE.SpriteMaterial({
       map: tex, transparent: true,
-      blending: THREE.NormalBlending,
+      blending: THREE.AdditiveBlending,
       depthWrite: false
     });
     this.sprite = new THREE.Sprite(spriteMat);
