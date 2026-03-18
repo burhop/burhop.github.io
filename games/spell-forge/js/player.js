@@ -31,7 +31,7 @@ class Player {
     const spriteMat = new THREE.SpriteMaterial({
       map: tex, transparent: true,
       blending: THREE.AdditiveBlending,
-      depthWrite: false
+      depthWrite: false, depthTest: false
     });
     this.sprite = new THREE.Sprite(spriteMat);
     this.sprite.scale.set(3.5, 4.8, 1);
