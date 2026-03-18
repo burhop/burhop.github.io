@@ -99,6 +99,65 @@ const Particles = {
     this.ring(position, color, 2.5);
   },
 
+  // ── FIRE BURST — warm orange/red rising sparks ─────────────
+  burstFire(position, count = 20) {
+    const geo  = new THREE.BufferGeometry();
+    const pos  = new Float32Array(count * 3);
+    const vel  = new Float32Array(count * 3);
+    const cols = [0xff4400, 0xff8800, 0xffcc00, 0xff2200];
+    for (let i = 0; i < count; i++) {
+      pos[i*3]   = position.x + (Math.random()-0.5)*0.3;
+      pos[i*3+1] = position.y + Math.random()*0.3;
+      pos[i*3+2] = position.z + (Math.random()-0.5)*0.3;
+      const theta = Math.random()*Math.PI*2;
+      const spd   = 1.5 + Math.random() * 3.5;
+      vel[i*3]   = Math.cos(theta)*spd*0.6;
+      vel[i*3+1] = 2.5 + Math.random()*3.5;   // rises strongly
+      vel[i*3+2] = Math.sin(theta)*spd*0.6;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const colIdx = Math.floor(Math.random()*cols.length);
+    const mat = new THREE.PointsMaterial({ color:cols[colIdx], size:0.32, transparent:true, opacity:1, blending:THREE.AdditiveBlending, depthWrite:false });
+    const pts = new THREE.Points(geo, mat);
+    this.scene.add(pts);
+    this.systems.push({ pts, velocities:vel, age:0, lifetime:0.7, isAmbient:false, isLine:false });
+  },
+
+  // ── FROST BURST — cold blue/white spreading flakes ─────────
+  burstFrost(position, count = 20) {
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    const vel = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos[i*3]   = position.x + (Math.random()-0.5)*0.2;
+      pos[i*3+1] = position.y + Math.random()*0.2;
+      pos[i*3+2] = position.z + (Math.random()-0.5)*0.2;
+      const theta = Math.random()*Math.PI*2;
+      const phi   = Math.acos(2*Math.random()-1);
+      const spd   = 2.5 + Math.random()*3.0;
+      vel[i*3]   = Math.sin(phi)*Math.cos(theta)*spd;
+      vel[i*3+1] = Math.abs(Math.cos(phi))*spd*0.4 + 0.3;  // mostly outward, slight rise
+      vel[i*3+2] = Math.sin(phi)*Math.sin(theta)*spd;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    // Alternate blue/white
+    const col = Math.random() > 0.5 ? 0x88eeff : 0xffffff;
+    const mat = new THREE.PointsMaterial({ color:col, size:0.22, transparent:true, opacity:1, blending:THREE.AdditiveBlending, depthWrite:false });
+    const pts = new THREE.Points(geo, mat);
+    this.scene.add(pts);
+    this.systems.push({ pts, velocities:vel, age:0, lifetime:0.6, isAmbient:false, isLine:false });
+  },
+
+  // ── ICE SHATTER — large crystalline splinter burst ─────────
+  iceShatter(position) {
+    // Large icy splinters outward
+    this.burstFrost(position, 60);
+    // Frozen ground ring
+    this.ring(position, 0x44ccff, 3.5);
+    // Second ring delayed (simulate ice crack spreading)
+    setTimeout(() => { if (this.scene) this.ring(position, 0x88eeff, 5); }, 120);
+  },
+
   // ── AMBIENT FLOATING MOTES ─────────────────────────────────
   createAmbient(count) {
     const geo = new THREE.BufferGeometry();
