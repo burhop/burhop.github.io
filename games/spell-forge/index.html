@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spell Forge Arena</title>
+  <meta name="description" content="Spell Forge Arena — gesture-based magic shooter. Draw spells with your mouse to defeat waves of enemies!" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- THREE.JS CANVAS -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- GESTURE DRAWING CANVAS (overlay, pointer-events handled by JS) -->
+  <canvas id="gesture-canvas"></canvas>
+
+  <!-- HUD (shown while playing) -->
+  <div id="hud" class="hidden">
+
+    <div id="wave-display">Wave <span id="wave-num">1</span></div>
+    <div id="enemy-count">Enemies remaining: <span id="enemy-num">0</span></div>
+    <div id="score-display">⭐ <span id="score-num">0</span></div>
+
+    <div id="bars">
+      <div class="bar-row">
+        <span class="bar-label">HP</span>
+        <div class="bar-bg"><div id="health-bar" class="bar health" style="width:100%"></div></div>
+        <span class="bar-text" id="health-bar-text">100/100</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">MP</span>
+        <div class="bar-bg"><div id="mana-bar" class="bar mana" style="width:100%"></div></div>
+        <span class="bar-text" id="mana-bar-text">100/100</span>
+      </div>
+    </div>
+
+    <div id="spell-bar">
+      <div class="spell-icon" id="spell-0">🔥</div>
+      <div class="spell-icon" id="spell-1">❄️</div>
+      <div class="spell-icon" id="spell-2">⚡</div>
+      <div class="spell-icon" id="spell-3">🛡️</div>
+      <div class="spell-icon" id="spell-4">🌪️</div>
+    </div>
+
+    <div id="crosshair"></div>
+    <div id="damage-numbers"></div>
+    <div id="gesture-hint"></div>
+    <div id="shield-indicator" class="hidden">🛡️ SHIELDED</div>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div id="menu-screen" class="screen">
+    <div class="menu-box">
+      <h1>SPELL FORGE<br><span class="title-sub">ARENA</span></h1>
+      <button class="menu-btn primary" onclick="Game.start()">▶ PLAY</button>
+      <button class="menu-btn" onclick="UI.showInstructions()">📖 HOW TO PLAY</button>
+      <button class="menu-btn" onclick="UI.showHighScores()">🏆 HIGH SCORES</button>
+    </div>
+  </div>
+
+  <!-- INSTRUCTIONS -->
+  <div id="instructions-screen" class="screen hidden">
+    <div class="menu-box wide">
+      <h2>HOW TO PLAY</h2>
+      <div class="instructions-grid">
+        <div class="inst-section">
+          <h3>🎮 Controls</h3>
+          <p><kbd>W A S D</kbd> — Move</p>
+          <p><kbd>Space</kbd> — Dash/Dodge</p>
+          <p><kbd>1–5</kbd> — Quick-cast spells</p>
+          <p><kbd>Right Click</kbd> + Drag — Rotate camera</p>
+          <p><kbd>Scroll</kbd> — Zoom</p>
+          <p><kbd>ESC</kbd> — Pause</p>
+        </div>
+        <div class="inst-section">
+          <h3>✨ Spells (Draw with Left Click)</h3>
+          <p>↑ Drag UP → 🔥 Fireball (AOE)</p>
+          <p>↓ Drag DOWN → ❄️ Ice Shard (slows)</p>
+          <p>⚡ Zigzag → ⚡ Lightning (stuns)</p>
+          <p>○ Circle → 🛡️ Shield (absorb damage)</p>
+          <p>🌀 Spiral → 🌪️ Tornado (homing pull)</p>
+        </div>
+        <div class="inst-section">
+          <h3>👾 Enemies</h3>
+          <p>🔴 <b>Charger</b> — Rushes you</p>
+          <p>🔵 <b>Orbiter</b> — Circle + shoots</p>
+          <p>🟣 <b>Teleporter</b> — Blinks + shoots</p>
+          <p>⚪ <b>Tank</b> — Boss, tough & slow</p>
+          <p>🟢 <b>Swarm</b> — Fast packs</p>
+        </div>
+      </div>
+      <button class="menu-btn primary" onclick="UI.hideInstructions()">← BACK</button>
+    </div>
+  </div>
+
+  <!-- PAUSE MENU -->
+  <div id="pause-screen" class="screen hidden">
+    <div class="menu-box">
+      <h2>PAUSED</h2>
+      <button class="menu-btn primary" onclick="Game.resume()">▶ RESUME</button>
+      <button class="menu-btn" onclick="Game.restart()">🔄 RESTART</button>
+      <button class="menu-btn" onclick="Game.mainMenu()">🚪 MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="gameover-screen" class="screen hidden">
+    <div class="menu-box">
+      <h2 style="color:#f87171">GAME OVER</h2>
+      <div id="go-stats"></div>
+      <button class="menu-btn primary" onclick="Game.restart()">🔄 RETRY</button>
+      <button class="menu-btn" onclick="Game.mainMenu()">🚪 MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- WAVE CLEAR BANNER -->
+  <div id="wave-clear" class="screen hidden">
+    <div class="wave-clear-box">
+      <h2 id="wave-clear-title">WAVE CLEARED! ⚔️</h2>
+      <p id="wave-clear-msg"></p>
+    </div>
+  </div>
+
+  <!-- HIGH SCORES -->
+  <div id="scores-screen" class="screen hidden">
+    <div class="menu-box">
+      <h2>🏆 HIGH SCORES</h2>
+      <div id="high-scores-list"></div>
+      <button class="menu-btn primary" onclick="UI.hideHighScores()">← BACK</button>
+    </div>
+  </div>
+
+  <!-- Scripts — order matters (dependencies first) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/gestures.js"></script>
+  <script src="js/spells.js"></script>
+  <script src="js/enemies.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+
+</body>
+</html>

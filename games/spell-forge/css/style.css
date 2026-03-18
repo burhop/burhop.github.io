@@ -1,0 +1,305 @@
+/* style.css — Spell Forge Arena */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --purple: #8b5cf6;
+  --cyan:   #22d3ee;
+  --pink:   #f472b6;
+  --yellow: #facc15;
+  --red:    #f87171;
+  --green:  #4ade80;
+  --bg:     #0a0a14;
+  --panel:  rgba(10,10,25,0.92);
+}
+
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: var(--bg);
+  font-family: 'Orbitron', 'Courier New', monospace;
+  color: #e2e8f0;
+  user-select: none;
+}
+
+/* ── CANVASES ── */
+#game-canvas {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+}
+
+#gesture-canvas {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── SCREENS / OVERLAYS ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  background: rgba(5,5,20,0.85);
+  backdrop-filter: blur(4px);
+}
+.screen.hidden { display: none; }
+
+.menu-box {
+  background: var(--panel);
+  border: 1px solid #ffffff18;
+  border-radius: 20px;
+  padding: 48px 56px;
+  text-align: center;
+  min-width: 340px;
+  box-shadow: 0 0 60px #8b5cf640, 0 0 0 1px #8b5cf620;
+}
+.menu-box.wide { min-width: 600px; }
+
+.menu-box h1 {
+  font-size: 2.8rem; font-weight: 900; line-height: 1.1;
+  background: linear-gradient(135deg, var(--purple), var(--cyan), var(--pink));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 36px;
+  text-shadow: none;
+  filter: drop-shadow(0 0 20px #8b5cf660);
+}
+.title-sub { font-size: 1.6rem; letter-spacing: 8px; }
+
+.menu-box h2 {
+  font-size: 1.8rem;
+  color: var(--cyan);
+  margin-bottom: 28px;
+  text-shadow: 0 0 20px #22d3ee80;
+}
+
+.menu-btn {
+  display: block; width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #ffffff25;
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.95rem; font-weight: 700;
+  padding: 14px 24px;
+  margin: 8px 0;
+  cursor: pointer;
+  transition: all .2s;
+  letter-spacing: 1px;
+}
+.menu-btn:hover { background: rgba(139,92,246,0.2); border-color: var(--purple); color: #fff; }
+.menu-btn.primary {
+  background: linear-gradient(135deg, var(--purple), #6d28d9);
+  border-color: var(--purple);
+  color: #fff;
+  font-size: 1.05rem;
+  box-shadow: 0 0 20px #8b5cf650;
+}
+.menu-btn.primary:hover { box-shadow: 0 0 30px #8b5cf690; transform: translateY(-2px); }
+
+/* ── HUD ── */
+#hud {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+#hud.hidden { display: none; }
+
+/* Bars */
+#bars {
+  position: absolute; bottom: 20px; left: 20px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.bar-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.bar-label {
+  font-size: 0.7rem; font-weight: 700; width: 22px;
+  color: #94a3b8; letter-spacing: 1px;
+}
+.bar-bg {
+  width: 200px; height: 14px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid #ffffff20;
+  border-radius: 7px; overflow: hidden;
+}
+.bar {
+  height: 100%; border-radius: 7px;
+  transition: width .1s;
+}
+.bar.health { background: linear-gradient(90deg, #ef4444, #f87171); box-shadow: 0 0 8px #ef444480; }
+.bar.mana   { background: linear-gradient(90deg, #3b82f6, #22d3ee); box-shadow: 0 0 8px #3b82f680; }
+.bar-text { font-size: 0.7rem; color: #94a3b8; width: 52px; }
+
+/* Spell bar */
+#spell-bar {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 8px; pointer-events: auto;
+}
+.spell-icon {
+  width: 56px; height: 56px;
+  background: rgba(0,0,0,0.7);
+  border: 2px solid #ffffff20;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+  position: relative;
+  transition: all .15s;
+  cursor: default;
+}
+.spell-icon.highlight { border-color: var(--cyan); box-shadow: 0 0 12px #22d3ee80; }
+.spell-icon.on-cooldown { opacity: 0.45; }
+.spell-icon.no-mana { border-color: #ef4444; }
+.spell-key {
+  position: absolute; bottom: 3px; right: 5px;
+  font-size: 0.55rem; color: #94a3b8; font-family: monospace;
+}
+.cooldown-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.6);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; color: #fff;
+  opacity: 0;
+}
+.spell-icon.on-cooldown .cooldown-overlay { opacity: 1; }
+
+/* Score / wave */
+#score-display {
+  position: absolute; top: 16px; right: 20px;
+  font-size: 1.4rem; font-weight: 900;
+  color: var(--yellow);
+  text-shadow: 0 0 20px #facc1590;
+}
+#wave-display {
+  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  font-size: 1rem; color: var(--cyan);
+  text-shadow: 0 0 12px #22d3ee90;
+  background: rgba(0,0,0,0.5);
+  padding: 4px 16px; border-radius: 20px;
+}
+#enemy-count {
+  position: absolute; top: 48px; left: 50%; transform: translateX(-50%);
+  font-size: 0.75rem; color: #94a3b8;
+}
+
+/* Crosshair */
+#crosshair {
+  position: absolute; top: 50%; left: 50%;
+  width: 20px; height: 20px;
+  transform: translate(-50%,-50%);
+  border: 2px solid rgba(139,92,246,0.8);
+  border-radius: 50%;
+  box-shadow: 0 0 8px #8b5cf6;
+}
+#crosshair::before, #crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(139,92,246,0.8);
+}
+#crosshair::before { width: 1px; height: 8px; left: 50%; top: -10px; transform: translateX(-50%); }
+#crosshair::after  { width: 8px; height: 1px; top: 50%; left: -10px; transform: translateY(-50%); }
+
+/* Damage numbers */
+#damage-numbers {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.dmg-num {
+  position: absolute;
+  font-size: 1.1rem; font-weight: 900;
+  text-shadow: 0 2px 4px #000;
+  animation: floatUp 0.9s ease-out forwards;
+  pointer-events: none;
+  white-space: nowrap;
+}
+@keyframes floatUp {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-60px); opacity: 0; }
+}
+
+/* Gesture hint */
+#gesture-hint {
+  position: absolute; top: 80px; right: 20px;
+  font-size: 0.75rem; color: #94a3b8;
+  text-align: right; line-height: 1.7;
+  background: rgba(0,0,0,0.5);
+  padding: 8px 12px; border-radius: 8px;
+  border: 1px solid #ffffff10;
+}
+
+/* Combo */
+#combo-display {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 2rem; font-weight: 900;
+  color: var(--yellow);
+  text-shadow: 0 0 30px #facc15;
+  animation: comboAnim 0.5s ease-out;
+}
+#combo-display.hidden { display: none; }
+@keyframes comboAnim {
+  0%   { transform: translate(-50%,-50%) scale(1.5); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+}
+
+/* Shield indicator */
+#shield-indicator {
+  position: absolute; top: 56px; left: 20px;
+  color: var(--purple);
+  font-size: 0.85rem;
+  text-shadow: 0 0 12px #8b5cf6;
+  animation: pulse 1s infinite;
+}
+#shield-indicator.hidden { display: none; }
+@keyframes pulse {
+  0%,100% { opacity: 1; } 50% { opacity: 0.5; }
+}
+
+/* Wave clear */
+#wave-clear {
+  background: transparent;
+  pointer-events: none;
+}
+.wave-clear-box {
+  text-align: center;
+  animation: waveBanner 0.4s ease-out;
+}
+.wave-clear-box h2 { font-size: 2.5rem; color: var(--yellow); text-shadow: 0 0 40px #facc15; }
+.wave-clear-box p  { font-size: 1rem; color: #94a3b8; margin-top: 8px; }
+@keyframes waveBanner {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* Instructions grid */
+.instructions-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 28px; text-align: left; }
+.inst-section h3 { color: var(--cyan); font-size: 0.9rem; margin-bottom: 10px; }
+.inst-section p { font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-family: sans-serif; }
+kbd { background: #1e1b4b; border: 1px solid #4c1d95; border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.75rem; }
+
+/* Game over stats */
+#go-stats { margin: 16px 0 28px; line-height: 2; font-size: 0.9rem; color: #94a3b8; font-family: sans-serif; }
+#go-stats span { color: #fff; font-weight: bold; }
+
+/* High scores */
+#high-scores-list { margin: 0 0 24px; }
+.score-row { display: flex; justify-content: space-between; gap: 32px; 
+  padding: 8px 0; border-bottom: 1px solid #ffffff10; font-size: 0.85rem; font-family: sans-serif; }
+.score-rank { color: var(--yellow); font-weight: bold; width: 24px; }
+.score-val { color: #fff; font-weight: bold; }
+.score-meta { color: #64748b; font-size: 0.75rem; }
+
+/* Spell cast flash */
+.cast-flash {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  border-radius: 0;
+  animation: castFlash 0.3s ease-out forwards;
+  z-index: 15;
+}
+@keyframes castFlash {
+  0%   { opacity: 0.25; }
+  100% { opacity: 0; }
+}
