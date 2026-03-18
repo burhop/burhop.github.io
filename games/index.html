@@ -1,527 +1,343 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Poppy's Game Zone!</title>
-    <meta property="og:title" content="Poppy's Game Zone!" />
-    <meta property="og:url" content="https://burhop.github.io/games" />
-    <meta property="og:image" content="../img/main.png" />
-    <style>
-        body {
-            background-image: url("../img/DarkPrimeSpiral.png");
-            background-repeat: no-repeat;
-            color: greenyellow;
-            font-family: "fantasy";
-            font-weight: bold;
-        }
-        a:link    { color: pink; }
-        a:visited { color: green; }
-        a:hover   { color: hotpink; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emmett's Games</title>
+  <meta name="description" content="Emmett's Games – the coolest games on the internet." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── RESET & BASE ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        h1 { text-shadow: 2px 2px 0 #000; }
-        h2 { text-shadow: 1px 1px 0 #000; color: hotpink; }
+    :root {
+      --bg:       #0a0a12;
+      --surface:  #12122a;
+      --card-bg:  #16163a;
+      --purple:   #8b5cf6;
+      --cyan:     #22d3ee;
+      --pink:     #f472b6;
+      --yellow:   #facc15;
+      --text:     #e2e8f0;
+      --muted:    #94a3b8;
+      --radius:   18px;
+      --glow-p:   0 0 20px #8b5cf680;
+      --glow-c:   0 0 20px #22d3ee80;
+    }
 
-        .back-link {
-            font-size: 1.1em;
-            margin-bottom: 10px;
-            display: inline-block;
-        }
+    html { scroll-behavior: smooth; }
 
-        /* ---- GAME TABS ---- */
-        .tab-bar {
-            display: flex;
-            gap: 8px;
-            margin: 18px 0 0 0;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            background: black;
-            border: 3px solid greenyellow;
-            color: greenyellow;
-            font-family: "fantasy";
-            font-size: 1.1em;
-            font-weight: bold;
-            padding: 6px 18px;
-            cursor: pointer;
-            text-shadow: 1px 1px 0 #000;
-        }
-        .tab-btn.active, .tab-btn:hover {
-            background: greenyellow;
-            color: black;
-        }
+    body {
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, #1e1b4b 0%, transparent 70%),
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff08' stroke-width='1'%3E%3Cpath d='M0 30h60M30 0v60'/%3E%3C/g%3E%3C/svg%3E");
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-        .game-panel { display: none; }
-        .game-panel.active { display: block; }
+    /* ── HEADER ── */
+    header {
+      text-align: center;
+      padding: 60px 20px 40px;
+      position: relative;
+    }
 
-        /* ---- SNAKE ---- */
-        #snake-canvas {
-            border: 4px solid hotpink;
-            background: #000;
-            display: block;
-            margin: 10px auto;
-            cursor: none;
-        }
-        .game-info {
-            text-align: center;
-            font-size: 1.2em;
-        }
-        .game-btn {
-            background: black;
-            border: 3px solid hotpink;
-            color: hotpink;
-            font-family: "fantasy";
-            font-size: 1em;
-            font-weight: bold;
-            padding: 6px 16px;
-            cursor: pointer;
-            margin: 4px;
-        }
-        .game-btn:hover { background: hotpink; color: black; }
+    .header-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 6px 18px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
 
-        /* ---- TIC TAC TOE ---- */
-        #ttt-board {
-            display: grid;
-            grid-template-columns: repeat(3, 110px);
-            grid-template-rows: repeat(3, 110px);
-            gap: 6px;
-            margin: 14px auto;
-            width: max-content;
-        }
-        .ttt-cell {
-            background: black;
-            border: 3px solid greenyellow;
-            width: 110px;
-            height: 110px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3.5em;
-            cursor: pointer;
-            color: hotpink;
-            transition: background 0.15s;
-        }
-        .ttt-cell:hover { background: #0a1a0a; }
-        .ttt-cell.x-mark { color: hotpink; }
-        .ttt-cell.o-mark { color: greenyellow; }
-        .ttt-cell.winner-cell { background: #003300; border-color: hotpink; }
-        #ttt-status { font-size: 1.4em; text-align: center; min-height: 2em; }
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2.8rem, 8vw, 5.5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      background: linear-gradient(135deg, var(--purple) 0%, var(--cyan) 50%, var(--pink) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 0 30px #8b5cf640);
+    }
 
-        /* ---- REACTION ---- */
-        #reaction-panel { text-align: center; }
-        #reaction-box {
-            width: 360px;
-            height: 200px;
-            background: #111;
-            border: 4px solid greenyellow;
-            margin: 20px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
-            cursor: pointer;
-            user-select: none;
-            transition: background 0.3s;
-        }
-        #reaction-box.ready  { background: #003300; border-color: hotpink; color: hotpink; }
-        #reaction-box.early  { background: #330000; border-color: red; color: red; }
-        #reaction-box.done   { background: #004400; border-color: lime; color: lime; }
-        #reaction-scores { font-size: 1em; margin-top: 6px; }
+    .header-sub {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto 10px;
+    }
 
-        /* ---- MOLE ---- */
-        #mole-panel { text-align: center; }
-        #mole-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 110px);
-            grid-template-rows: repeat(3, 110px);
-            gap: 10px;
-            margin: 14px auto;
-            width: max-content;
-        }
-        .mole-hole {
-            width: 110px;
-            height: 110px;
-            background: #1a0a00;
-            border: 3px solid #7a4000;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3em;
-            cursor: pointer;
-        }
-        .mole-hole.active { background: #3a2200; border-color: hotpink; cursor: crosshair; }
-        #mole-info { font-size: 1.2em; }
-    </style>
+    .header-stars {
+      font-size: 1.5rem;
+      letter-spacing: 6px;
+      margin-top: 8px;
+    }
+
+    /* ── FLOATING SHAPES ── */
+    .floater {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.18;
+      pointer-events: none;
+      animation: drift 8s ease-in-out infinite alternate;
+    }
+    .floater-1 { width:340px; height:340px; background:var(--purple); top:-80px; left:-100px; animation-delay:0s; }
+    .floater-2 { width:260px; height:260px; background:var(--cyan);   top:-40px; right:-80px; animation-delay:-3s; }
+    .floater-3 { width:200px; height:200px; background:var(--pink);   top:60px; right:20%;  animation-delay:-5s; }
+
+    @keyframes drift {
+      from { transform: translateY(0) translateX(0); }
+      to   { transform: translateY(30px) translateX(20px); }
+    }
+
+    /* ── BACK LINK ── */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 0 32px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      transition: color .2s;
+    }
+    .back-link:hover { color: var(--cyan); }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      text-align: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 36px;
+    }
+
+    /* ── GAME GRID ── */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 28px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* ── GAME CARD ── */
+    .game-card {
+      background: var(--card-bg);
+      border: 1px solid #ffffff12;
+      border-radius: var(--radius);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s;
+    }
+
+    .game-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius);
+      padding: 1.5px;
+      background: linear-gradient(135deg, var(--purple), var(--cyan), var(--pink));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .game-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 60px #8b5cf640, 0 0 0 1px #8b5cf620;
+    }
+    .game-card:hover::before { opacity: 1; }
+
+    /* Card thumbnail */
+    .card-thumb {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Placeholder thumb (no image yet) */
+    .card-thumb-placeholder {
+      width: 100%;
+      aspect-ratio: 16/9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+    }
+
+    /* Color variants for placeholder */
+    .thumb-purple  { background: linear-gradient(135deg, #1e1b4b, #4c1d95); }
+    .thumb-cyan    { background: linear-gradient(135deg, #0c4a6e, #0e7490); }
+    .thumb-pink    { background: linear-gradient(135deg, #500724, #9d174d); }
+    .thumb-yellow  { background: linear-gradient(135deg, #422006, #92400e); }
+    .thumb-green   { background: linear-gradient(135deg, #052e16, #065f46); }
+    .thumb-indigo  { background: linear-gradient(135deg, #1e1b4b, #312e81); }
+
+    /* Tag pill */
+    .card-tag {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(6px);
+      border: 1px solid #ffffff25;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: .5px;
+      padding: 4px 10px;
+      color: var(--yellow);
+    }
+
+    /* Card body */
+    .card-body {
+      flex: 1;
+      padding: 20px 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-desc {
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.55;
+      flex: 1;
+    }
+
+    .card-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      font-size: 0.85rem;
+      font-weight: 900;
+      font-family: 'Orbitron', sans-serif;
+      color: var(--cyan);
+      letter-spacing: .5px;
+      transition: gap .2s;
+    }
+    .game-card:hover .card-cta { gap: 10px; color: var(--pink); }
+
+    /* COMING SOON card style */
+    .card-coming .card-title { color: var(--muted); }
+    .card-coming .card-cta   { color: var(--purple); }
+    .card-coming:hover { transform: none; box-shadow: none; cursor: default; }
+    .card-coming:hover::before { opacity: 0; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 32px 20px;
+      border-top: 1px solid #ffffff0a;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--purple); text-decoration: none; }
+    footer a:hover { color: var(--pink); }
+
+    /* ── PULSE ANIMATION on title ── */
+    @keyframes pulse-glow {
+      0%, 100% { filter: drop-shadow(0 0 20px #8b5cf650); }
+      50%       { filter: drop-shadow(0 0 50px #22d3ee60); }
+    }
+    h1 { animation: pulse-glow 4s ease-in-out infinite; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 4px; }
+  </style>
 </head>
 <body>
 
-<center>
-    <img src="../img/undercon.gif" alt="under construction">
-    <marquee direction="down" width="600" height="80" behavior="alternate"
-             style="border:solid;background-color:black;font-size:50px;color:orange">
-        <marquee behavior="alternate">
-            🕹️ GAME ZONE 🕹️
-        </marquee>
-    </marquee>
-</center>
+  <a class="back-link" href="../index.html">← Back to Poppy's Home</a>
 
-<a class="back-link" href="../index.html">⬅ Back to Poppy's Home Page</a>
+  <header>
+    <div class="floater floater-1"></div>
+    <div class="floater floater-2"></div>
+    <div class="floater floater-3"></div>
+    <div class="header-badge">🎮 Level Up</div>
+    <h1>Emmett's Games</h1>
+    <p class="header-sub">The coolest games on the internet. Pick a game and get playing!</p>
+    <div class="header-stars">⭐ ⭐ ⭐ ⭐ ⭐</div>
+  </header>
 
-<h1>🎮 Poppy's Game Zone!</h1>
-<p>Welcome, brave adventurer, to the most radical gaming experience on the World Wide InterWebs!</p>
+  <p class="section-label">— Choose Your Game —</p>
 
-<div class="tab-bar">
-    <button class="tab-btn active" onclick="showGame('snake')">🐍 Snake</button>
-    <button class="tab-btn" onclick="showGame('ttt')">❌ Tic-Tac-Toe</button>
-    <button class="tab-btn" onclick="showGame('reaction')">⚡ Reaction Time</button>
-    <button class="tab-btn" onclick="showGame('mole')">🔨 Whack-a-Mole</button>
-</div>
+  <div class="games-grid">
 
-<!-- ========== SNAKE ========== -->
-<div id="panel-snake" class="game-panel active">
-    <h2>🐍 Snake</h2>
-    <p>Use arrow keys (or WASD) to control the snake. Eat the red apples!</p>
-    <div class="game-info">
-        Score: <span id="snake-score">0</span> &nbsp;|&nbsp;
-        High Score: <span id="snake-hi">0</span>
+    <!-- PLACEHOLDER CARD 1 -->
+    <div class="game-card card-coming">
+      <div class="card-thumb-placeholder thumb-purple">🕹️</div>
+      <span class="card-tag">COMING SOON</span>
+      <div class="card-body">
+        <div class="card-title">Game Slot #1</div>
+        <div class="card-desc">Something awesome is being built for this spot. Check back soon!</div>
+        <div class="card-cta">Coming Soon →</div>
+      </div>
     </div>
-    <canvas id="snake-canvas" width="400" height="400"></canvas>
-    <div style="text-align:center">
-        <button class="game-btn" onclick="snakeStartGame()">▶ Start / Restart</button>
+
+    <!-- PLACEHOLDER CARD 2 -->
+    <div class="game-card card-coming">
+      <div class="card-thumb-placeholder thumb-cyan">🚀</div>
+      <span class="card-tag">COMING SOON</span>
+      <div class="card-body">
+        <div class="card-title">Game Slot #2</div>
+        <div class="card-desc">Something awesome is being built for this spot. Check back soon!</div>
+        <div class="card-cta">Coming Soon →</div>
+      </div>
     </div>
-    <p style="text-align:center;font-size:0.9em">Press Start or any arrow key to begin!</p>
-</div>
 
-<!-- ========== TIC TAC TOE ========== -->
-<div id="panel-ttt" class="game-panel">
-    <h2>❌ Tic-Tac-Toe</h2>
-    <p>You are <b style="color:hotpink">X</b>. The computer is <b style="color:greenyellow">O</b>.</p>
-    <div id="ttt-status">Click a square to begin!</div>
-    <div id="ttt-board"></div>
-    <div style="text-align:center">
-        <button class="game-btn" onclick="tttReset()">🔄 New Game</button>
+    <!-- PLACEHOLDER CARD 3 -->
+    <div class="game-card card-coming">
+      <div class="card-thumb-placeholder thumb-pink">🔥</div>
+      <span class="card-tag">COMING SOON</span>
+      <div class="card-body">
+        <div class="card-title">Game Slot #3</div>
+        <div class="card-desc">Something awesome is being built for this spot. Check back soon!</div>
+        <div class="card-cta">Coming Soon →</div>
+      </div>
     </div>
-    <div style="text-align:center;font-size:1em">
-        Wins: <span id="ttt-wins">0</span> &nbsp;|&nbsp;
-        Losses: <span id="ttt-losses">0</span> &nbsp;|&nbsp;
-        Draws: <span id="ttt-draws">0</span>
-    </div>
-</div>
 
-<!-- ========== REACTION TIME ========== -->
-<div id="panel-reaction" class="game-panel">
-    <h2>⚡ Reaction Time Test</h2>
-    <p>When the box turns <b style="color:hotpink">PINK</b>, click it as fast as you can!</p>
-    <div id="reaction-box" onclick="reactionClick()">Click to Start</div>
-    <div id="reaction-scores">
-        Last: <span id="react-last">--</span> ms &nbsp;|&nbsp;
-        Best: <span id="react-best">--</span> ms &nbsp;|&nbsp;
-        Avg: <span id="react-avg">--</span> ms
-    </div>
-</div>
+  </div>
 
-<!-- ========== WHACK-A-MOLE ========== -->
-<div id="panel-mole" class="game-panel">
-    <h2>🔨 Whack-a-Mole</h2>
-    <div id="mole-info">
-        Score: <span id="mole-score">0</span> &nbsp;|&nbsp;
-        Time: <span id="mole-time">30</span>s &nbsp;|&nbsp;
-        High Score: <span id="mole-hi">0</span>
-    </div>
-    <div id="mole-grid"></div>
-    <div style="text-align:center">
-        <button class="game-btn" onclick="moleStart()">▶ Start / Restart</button>
-    </div>
-    <p style="text-align:center;font-size:0.9em">Click the moles before they hide!</p>
-</div>
+  <footer>
+    <p>Made with 💜 by Emmett &nbsp;·&nbsp; <a href="../index.html">burhop.github.io</a></p>
+  </footer>
 
-<hr>
-<center><img src="../img/codeguild1.gif" alt=""></center>
-
-<script>
-// ============================
-//  TAB SWITCHING
-// ============================
-function showGame(name) {
-    document.querySelectorAll('.game-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('panel-' + name).classList.add('active');
-    event.target.classList.add('active');
-}
-
-// ============================
-//  SNAKE GAME
-// ============================
-(function() {
-    const GRID = 20, CELL = 20;
-    const canvas = document.getElementById('snake-canvas');
-    const ctx = canvas.getContext('2d');
-    let snake, dir, nextDir, food, score, hiScore = 0, running = false, loop;
-
-    function rnd(n) { return Math.floor(Math.random() * n); }
-
-    function placeFood() {
-        let pos;
-        do { pos = {x: rnd(GRID), y: rnd(GRID)}; }
-        while (snake.some(s => s.x === pos.x && s.y === pos.y));
-        food = pos;
-    }
-
-    window.snakeStartGame = function() {
-        snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
-        dir = {x:1,y:0}; nextDir = {x:1,y:0};
-        score = 0;
-        document.getElementById('snake-score').textContent = 0;
-        placeFood();
-        running = true;
-        clearInterval(loop);
-        loop = setInterval(tick, 130);
-    };
-
-    function tick() {
-        dir = nextDir;
-        const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
-        if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID ||
-            snake.some(s => s.x === head.x && s.y === head.y)) {
-            running = false; clearInterval(loop);
-            if (score > hiScore) { hiScore = score; document.getElementById('snake-hi').textContent = hiScore; }
-            ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(0,0,canvas.width,canvas.height);
-            ctx.fillStyle = 'hotpink';
-            ctx.font = 'bold 28px fantasy';
-            ctx.textAlign = 'center';
-            ctx.fillText('GAME OVER! Score: ' + score, canvas.width/2, canvas.height/2);
-            ctx.font = '18px fantasy';
-            ctx.fillText('Press Start to play again', canvas.width/2, canvas.height/2 + 36);
-            return;
-        }
-        snake.unshift(head);
-        if (head.x === food.x && head.y === food.y) {
-            score++; document.getElementById('snake-score').textContent = score; placeFood();
-        } else { snake.pop(); }
-        draw();
-    }
-
-    function draw() {
-        ctx.fillStyle = '#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
-        // Grid dots
-        ctx.fillStyle = '#111';
-        for (let x=0;x<GRID;x++) for (let y=0;y<GRID;y++) {
-            ctx.fillRect(x*CELL+9,y*CELL+9,2,2);
-        }
-        // Food
-        ctx.fillStyle = 'red'; ctx.beginPath();
-        ctx.arc(food.x*CELL+CELL/2, food.y*CELL+CELL/2, CELL/2-2, 0, Math.PI*2);
-        ctx.fill();
-        // Snake
-        snake.forEach((s,i) => {
-            ctx.fillStyle = i===0 ? 'greenyellow' : '#00bb00';
-            ctx.fillRect(s.x*CELL+1, s.y*CELL+1, CELL-2, CELL-2);
-        });
-    }
-
-    // Initial draw
-    ctx.fillStyle = '#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = 'greenyellow'; ctx.font = 'bold 22px fantasy'; ctx.textAlign='center';
-    ctx.fillText('Press Start or Arrow Key', canvas.width/2, canvas.height/2-10);
-    ctx.fillText('to begin!', canvas.width/2, canvas.height/2+20);
-
-    document.addEventListener('keydown', e => {
-        const moves = {
-            ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1},
-            ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
-            w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0}
-        };
-        if (moves[e.key]) {
-            const m = moves[e.key];
-            if (!running) { snakeStartGame(); return; }
-            // Prevent 180-degree turns
-            if (m.x !== -dir.x || m.y !== -dir.y) nextDir = m;
-            if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
-        }
-    });
-})();
-
-// ============================
-//  TIC-TAC-TOE
-// ============================
-(function() {
-    let board, gameOver, wins=0, losses=0, draws=0;
-    const WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-
-    function checkWinner(b) {
-        for (const [a,bb,c] of WIN_LINES)
-            if (b[a] && b[a]===b[bb] && b[a]===b[c]) return {winner:b[a], line:[a,bb,c]};
-        if (b.every(x=>x)) return {winner:'draw'};
-        return null;
-    }
-
-    function minimax(b, isMax) {
-        const w = checkWinner(b);
-        if (w) return w.winner==='O'?10: w.winner==='X'?-10:0;
-        let best = isMax ? -Infinity : Infinity;
-        b.forEach((v,i) => {
-            if (!v) {
-                b[i] = isMax ? 'O' : 'X';
-                const val = minimax(b, !isMax);
-                b[i] = null;
-                best = isMax ? Math.max(best,val) : Math.min(best,val);
-            }
-        });
-        return best;
-    }
-
-    function aiMove() {
-        let best=-Infinity, move=0;
-        board.forEach((v,i) => {
-            if (!v) {
-                board[i]='O';
-                const val=minimax(board,false);
-                board[i]=null;
-                if(val>best){best=val;move=i;}
-            }
-        });
-        board[move]='O';
-    }
-
-    function render(winLine) {
-        const container = document.getElementById('ttt-board');
-        container.innerHTML='';
-        board.forEach((v,i) => {
-            const cell = document.createElement('div');
-            cell.className = 'ttt-cell' + (v==='X'?' x-mark':v==='O'?' o-mark':'') +
-                             (winLine && winLine.includes(i) ? ' winner-cell':'');
-            cell.textContent = v==='X'?'✖':v==='O'?'⬤':'';
-            if (!v && !gameOver) cell.onclick = () => playerMove(i);
-            container.appendChild(cell);
-        });
-    }
-
-    function playerMove(i) {
-        if (gameOver || board[i]) return;
-        board[i]='X';
-        let result = checkWinner(board);
-        if (result) { endGame(result); return; }
-        aiMove();
-        result = checkWinner(board);
-        if (result) { endGame(result); return; }
-        render(null);
-    }
-
-    function endGame(result) {
-        gameOver=true;
-        let msg;
-        if(result.winner==='X'){ wins++; msg='🎉 You win! Amazing!'; }
-        else if(result.winner==='O'){ losses++; msg='🤖 Computer wins. Try again!'; }
-        else { draws++; msg="🤝 It's a draw!"; }
-        document.getElementById('ttt-status').textContent=msg;
-        document.getElementById('ttt-wins').textContent=wins;
-        document.getElementById('ttt-losses').textContent=losses;
-        document.getElementById('ttt-draws').textContent=draws;
-        render(result.line);
-    }
-
-    window.tttReset = function() {
-        board=Array(9).fill(null); gameOver=false;
-        document.getElementById('ttt-status').textContent='Your turn! (You are ✖)';
-        render(null);
-    };
-
-    tttReset();
-})();
-
-// ============================
-//  REACTION TIME
-// ============================
-(function() {
-    let state='idle', startTime, bestTime=null, times=[];
-    let timeout;
-    const box = document.getElementById('reaction-box');
-
-    window.reactionClick = function() {
-        if(state==='idle'||state==='done'||state==='early') {
-            box.className=''; box.textContent='Get ready...'; state='waiting';
-            clearTimeout(timeout);
-            timeout = setTimeout(()=>{
-                box.className='ready'; box.textContent='CLICK NOW!';
-                startTime=Date.now(); state='active';
-            }, 1000 + Math.random()*3000);
-        } else if(state==='waiting') {
-            clearTimeout(timeout);
-            box.className='early'; box.textContent='Too early! Click to try again.'; state='early';
-        } else if(state==='active') {
-            const elapsed=Date.now()-startTime;
-            times.push(elapsed);
-            if(!bestTime||elapsed<bestTime) bestTime=elapsed;
-            const avg=Math.round(times.reduce((a,b)=>a+b,0)/times.length);
-            document.getElementById('react-last').textContent=elapsed;
-            document.getElementById('react-best').textContent=bestTime;
-            document.getElementById('react-avg').textContent=avg;
-            box.className='done'; box.textContent=elapsed+' ms! Click to try again.'; state='done';
-        }
-    };
-})();
-
-// ============================
-//  WHACK-A-MOLE
-// ============================
-(function() {
-    let score=0, hiScore=0, timeLeft=30, activeMole=-1, running=false;
-    let moleTimer, countTimer;
-    const HOLES=9;
-
-    function buildGrid() {
-        const g=document.getElementById('mole-grid'); g.innerHTML='';
-        for(let i=0;i<HOLES;i++){
-            const h=document.createElement('div');
-            h.className='mole-hole'; h.id='hole-'+i;
-            h.innerHTML='🕳️';
-            h.onclick=()=>whack(i);
-            g.appendChild(h);
-        }
-    }
-
-    function showMole() {
-        if(!running) return;
-        if(activeMole>=0) { document.getElementById('hole-'+activeMole).classList.remove('active'); document.getElementById('hole-'+activeMole).innerHTML='🕳️'; }
-        activeMole=Math.floor(Math.random()*HOLES);
-        const hole=document.getElementById('hole-'+activeMole);
-        hole.classList.add('active'); hole.innerHTML='🐹';
-        clearTimeout(moleTimer);
-        const speed=Math.max(600,1200-score*20);
-        moleTimer=setTimeout(()=>{ if(running){ hole.classList.remove('active'); hole.innerHTML='🕳️'; activeMole=-1; showMole(); } },speed);
-    }
-
-    function whack(i) {
-        if(!running||i!==activeMole) return;
-        score++; document.getElementById('mole-score').textContent=score;
-        const hole=document.getElementById('hole-'+i);
-        hole.innerHTML='💥'; hole.classList.remove('active');
-        activeMole=-1;
-        clearTimeout(moleTimer);
-        setTimeout(()=>{ hole.innerHTML='🕳️'; showMole(); },200);
-    }
-
-    window.moleStart=function(){
-        score=0; timeLeft=30; running=true;
-        document.getElementById('mole-score').textContent=0;
-        document.getElementById('mole-time').textContent=30;
-        buildGrid();
-        clearInterval(countTimer);
-        countTimer=setInterval(()=>{
-            timeLeft--;
-            document.getElementById('mole-time').textContent=timeLeft;
-            if(timeLeft<=0){
-                running=false; clearInterval(countTimer); clearTimeout(moleTimer);
-                if(activeMole>=0){ document.getElementById('hole-'+activeMole).classList.remove('active'); document.getElementById('hole-'+activeMole).innerHTML='🕳️'; }
-                if(score>hiScore){ hiScore=score; document.getElementById('mole-hi').textContent=hiScore; }
-                document.getElementById('mole-score').textContent='Game Over! Score: '+score;
-            }
-        },1000);
-        showMole();
-    };
-
-    buildGrid();
-})();
-</script>
 </body>
 </html>
