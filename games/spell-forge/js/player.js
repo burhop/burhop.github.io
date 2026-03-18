@@ -156,21 +156,21 @@ class Player {
 
     // Switch front/back texture based on camera angle
     if (typeof Game !== 'undefined' && Game.camera) {
-      const cam   = Game.camera.position;
-      const camDir = new THREE.Vector3().subVectors(cam, this.mesh.position).normalize();
-      // If movement vector is significant, use it; otherwise use camera forward
+      const camDir = Game.camera.position.clone().sub(this.mesh.position).normalize();
+      // Player faces the direction of movement, or forward into the scene when idle
       let facingDir;
       if (moveVec.length() > 0.001) {
         facingDir = moveVec.clone().normalize();
       } else {
-        facingDir = Game._getCameraForward().negate(); // player "faces" away from camera
+        facingDir = Game._getCameraForward(); // faces INTO the scene, away from camera
       }
       const dot = camDir.x * facingDir.x + camDir.z * facingDir.z;
-      // dot > 0 means camera sees the front, dot < 0 means camera sees the back
-      const wantFront = dot > 0.1;
-      const currentTex = wantFront ? this.texFront : this.texBack;
-      if (this.sprite.material.map !== currentTex) {
-        this.sprite.material.map = currentTex;
+      // dot > 0 means camera and facing same direction = camera sees front
+      // dot < 0 means opposite = camera sees back (default since camera is behind)
+      const wantFront = dot > 0;
+      const tex = wantFront ? this.texFront : this.texBack;
+      if (this.sprite.material.map !== tex) {
+        this.sprite.material.map = tex;
         this.sprite.material.needsUpdate = true;
       }
     }
