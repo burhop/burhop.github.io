@@ -26,10 +26,11 @@ class Player {
     this.mesh = new THREE.Group();
     this.scene.add(this.mesh);
 
-    // ── Wizard sprite (billboard) ──────────────────────
-    const tex = SpriteLoader.load('img/wizard.png');
+    // ── Wizard sprite (billboard) – front + back ─────
+    this.texFront = SpriteLoader.load('img/wizard.png');
+    this.texBack  = SpriteLoader.load('img/wizard_back.png');
     const spriteMat = new THREE.SpriteMaterial({
-      map: tex, transparent: true,
+      map: this.texBack, transparent: true,
       blending: THREE.NormalBlending,
       depthWrite: false, depthTest: false
     });
@@ -152,6 +153,27 @@ class Player {
     // Flip sprite when moving left
     if (moveVec.x < -0.001) this.sprite.scale.x = -3.5;
     else if (moveVec.x > 0.001) this.sprite.scale.x = 3.5;
+
+    // Switch front/back texture based on camera angle
+    if (typeof Game !== 'undefined' && Game.camera) {
+      const cam   = Game.camera.position;
+      const camDir = new THREE.Vector3().subVectors(cam, this.mesh.position).normalize();
+      // If movement vector is significant, use it; otherwise use camera forward
+      let facingDir;
+      if (moveVec.length() > 0.001) {
+        facingDir = moveVec.clone().normalize();
+      } else {
+        facingDir = Game._getCameraForward().negate(); // player "faces" away from camera
+      }
+      const dot = camDir.x * facingDir.x + camDir.z * facingDir.z;
+      // dot > 0 means camera sees the front, dot < 0 means camera sees the back
+      const wantFront = dot > 0.1;
+      const currentTex = wantFront ? this.texFront : this.texBack;
+      if (this.sprite.material.map !== currentTex) {
+        this.sprite.material.map = currentTex;
+        this.sprite.material.needsUpdate = true;
+      }
+    }
 
     // Animate rings
     this.rings.forEach(ring => {
