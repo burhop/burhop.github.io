@@ -42,8 +42,8 @@ class Enemy {
     const [sw, sh] = this.cfg.spriteSize;
 
     // ── Character sprite (auto-billboards) ───────────
-    const tex = new THREE.TextureLoader().load(this.cfg.spriteImg);
-    const spriteMat = new THREE.SpriteMaterial({ map:tex, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false });
+    const tex = SpriteLoader.load(this.cfg.spriteImg);
+    const spriteMat = new THREE.SpriteMaterial({ map:tex, transparent:true, blending:THREE.NormalBlending, depthWrite:false, depthTest:false });
     this.sprite = new THREE.Sprite(spriteMat);
     this.sprite.scale.set(sw, sh, 1);
     this.sprite.position.y = sh / 2;
