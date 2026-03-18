@@ -26,16 +26,18 @@ class Player {
     this.mesh = new THREE.Group();
     this.scene.add(this.mesh);
 
-    // ── Wizard sprite (billboard) – front + back ─────
+    // ── Wizard sprite (billboard) – 4 directions ────
     this.texFront = SpriteLoader.load('img/wizard.png');
     this.texBack  = SpriteLoader.load('img/wizard_back.png');
+    this.texSide  = SpriteLoader.load('img/wizard_side.png');
     const spriteMat = new THREE.SpriteMaterial({
       map: this.texBack, transparent: true,
       blending: THREE.NormalBlending,
       depthWrite: false, depthTest: false
     });
     this.sprite = new THREE.Sprite(spriteMat);
-    this.sprite.scale.set(3.5, 4.8, 1);
+    this.spriteW = 3.5;
+    this.sprite.scale.set(this.spriteW, 4.8, 1);
     this.sprite.position.y = 2.4;
     this.mesh.add(this.sprite);
 
@@ -150,25 +152,36 @@ class Player {
     this.sprite.position.y = 2.4 + Math.sin(t * 2.2) * 0.12;
     this.halo.position.y   = 2.2 + Math.sin(t * 2.2) * 0.12;
 
-    // Flip sprite when moving left
-    if (moveVec.x < -0.001) this.sprite.scale.x = -3.5;
-    else if (moveVec.x > 0.001) this.sprite.scale.x = 3.5;
-
-    // Switch front/back texture based on camera angle
+    // ── 4-direction sprite switching ────────────────────
     if (typeof Game !== 'undefined' && Game.camera) {
+      // Work out angle from camera's perspective
       const camDir = Game.camera.position.clone().sub(this.mesh.position).normalize();
-      // Player faces the direction of movement, or forward into the scene when idle
       let facingDir;
       if (moveVec.length() > 0.001) {
         facingDir = moveVec.clone().normalize();
       } else {
-        facingDir = Game._getCameraForward(); // faces INTO the scene, away from camera
+        facingDir = Game._getCameraForward();
       }
-      const dot = camDir.x * facingDir.x + camDir.z * facingDir.z;
-      // dot > 0 means camera and facing same direction = camera sees front
-      // dot < 0 means opposite = camera sees back (default since camera is behind)
-      const wantFront = dot > 0;
-      const tex = wantFront ? this.texFront : this.texBack;
+      // Signed angle between camDir and facingDir in XZ plane
+      const dot   = camDir.x * facingDir.x + camDir.z * facingDir.z;
+      const cross = camDir.x * facingDir.z - camDir.z * facingDir.x;
+      const angle = Math.atan2(cross, dot); // -PI to PI
+
+      let tex;
+      const absAngle = Math.abs(angle);
+      if (absAngle < Math.PI / 4) {
+        // Camera and facing aligned → seeing front
+        tex = this.texFront;
+        this.sprite.scale.x = this.spriteW;
+      } else if (absAngle > 3 * Math.PI / 4) {
+        // Opposite → seeing back
+        tex = this.texBack;
+        this.sprite.scale.x = this.spriteW;
+      } else {
+        // Side view — flip for left vs right
+        tex = this.texSide;
+        this.sprite.scale.x = angle > 0 ? this.spriteW : -this.spriteW;
+      }
       if (this.sprite.material.map !== tex) {
         this.sprite.material.map = tex;
         this.sprite.material.needsUpdate = true;

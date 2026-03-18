@@ -26,11 +26,11 @@ class Enemy {
   }
 
   static CONFIG = {
-    CHARGER:    { health:50,  speed:4.5, damage:10, attackRange:2.8, attackCooldown:1.2, color:0xff3333, score:10, detectionRange:40, radius:1.2, spriteSize:[3.2,3.8], spriteImg:'img/charger.png', spriteImgBack:'img/charger_back.png' },
-    ORBITER:    { health:30,  speed:2.5, damage:8,  attackRange:20,  attackCooldown:2.5, color:0x3399ff, score:15, detectionRange:50, orbitRadius:15, radius:1.0, spriteSize:[2.8,3.2], spriteImg:'img/orbiter.png', spriteImgBack:'img/orbiter_back.png' },
-    TELEPORTER: { health:40,  speed:0,   damage:12, attackRange:22,  attackCooldown:1.8, color:0xff44ff, score:20, detectionRange:50, teleportCooldown:3.5, radius:1.0, spriteSize:[2.8,3.5], spriteImg:'img/teleporter.png', spriteImgBack:'img/teleporter_back.png' },
-    TANK:       { health:250, speed:1.4, damage:22, attackRange:4.5, attackCooldown:2.0, color:0x999999, score:80, detectionRange:60, radius:1.8, spriteSize:[5.0,6.0], spriteImg:'img/tank.png', spriteImgBack:'img/tank_back.png' },
-    SWARM:      { health:15,  speed:5.8, damage:5,  attackRange:2.2, attackCooldown:0.8, color:0x00cc55, score:5,  detectionRange:45, radius:0.6, spriteSize:[1.8,2.2], spriteImg:'img/swarm.png', spriteImgBack:'img/swarm_back.png' }
+    CHARGER:    { health:50,  speed:4.5, damage:10, attackRange:2.8, attackCooldown:1.2, color:0xff3333, score:10, detectionRange:40, radius:1.2, spriteSize:[3.2,3.8], spriteImg:'img/charger.png', spriteImgBack:'img/charger_back.png', spriteImgSide:'img/charger_side.png' },
+    ORBITER:    { health:30,  speed:2.5, damage:8,  attackRange:20,  attackCooldown:2.5, color:0x3399ff, score:15, detectionRange:50, orbitRadius:15, radius:1.0, spriteSize:[2.8,3.2], spriteImg:'img/orbiter.png', spriteImgBack:'img/orbiter_back.png', spriteImgSide:'img/orbiter_side.png' },
+    TELEPORTER: { health:40,  speed:0,   damage:12, attackRange:22,  attackCooldown:1.8, color:0xff44ff, score:20, detectionRange:50, teleportCooldown:3.5, radius:1.0, spriteSize:[2.8,3.5], spriteImg:'img/teleporter.png', spriteImgBack:'img/teleporter_back.png', spriteImgSide:'img/teleporter_side.png' },
+    TANK:       { health:250, speed:1.4, damage:22, attackRange:4.5, attackCooldown:2.0, color:0x999999, score:80, detectionRange:60, radius:1.8, spriteSize:[5.0,6.0], spriteImg:'img/tank.png', spriteImgBack:'img/tank_back.png', spriteImgSide:'img/tank_side.png' },
+    SWARM:      { health:15,  speed:5.8, damage:5,  attackRange:2.2, attackCooldown:0.8, color:0x00cc55, score:5,  detectionRange:45, radius:0.6, spriteSize:[1.8,2.2], spriteImg:'img/swarm.png', spriteImgBack:'img/swarm_back.png', spriteImgSide:'img/swarm_side.png' }
   };
 
   _buildMesh(position) {
@@ -41,11 +41,13 @@ class Enemy {
 
     const [sw, sh] = this.cfg.spriteSize;
 
-    // ── Character sprite (auto-billboards) – front + back ──
+    // ── Character sprite – 4 directions ─────────────
     this.texFront = SpriteLoader.load(this.cfg.spriteImg);
     this.texBack  = SpriteLoader.load(this.cfg.spriteImgBack);
+    this.texSide  = SpriteLoader.load(this.cfg.spriteImgSide);
     const spriteMat = new THREE.SpriteMaterial({ map:this.texFront, transparent:true, blending:THREE.NormalBlending, depthWrite:false, depthTest:false });
     this.sprite = new THREE.Sprite(spriteMat);
+    this.spriteW = sw;
     this.sprite.scale.set(sw, sh, 1);
     this.sprite.position.y = sh / 2;
     this.mesh.add(this.sprite);
@@ -137,16 +139,28 @@ class Enemy {
     this.aura.material.opacity = stunned ? 0.55 : 0.22 + Math.sin(this.age * 2.5) * 0.06;
     if (this.aura) this.aura.rotation.z += delta * 0.6;
 
-    // ── Switch front/back texture based on camera angle ──
+    // ── 4-direction sprite switching ────────────────────
     if (typeof Game !== 'undefined' && Game.camera) {
-      const camDir = Game.camera.position.clone().sub(this.mesh.position).normalize();
+      const camDir  = Game.camera.position.clone().sub(this.mesh.position).normalize();
       const toPlayer = playerPos.clone().sub(this.mesh.position);
       if (toPlayer.length() > 0.1) {
         toPlayer.normalize();
-        const dot = camDir.x * toPlayer.x + camDir.z * toPlayer.z;
-        // dot > 0: camera sees the front of the enemy (enemy faces player, camera is on same side)
-        const wantFront = dot > 0.1;
-        const tex = wantFront ? this.texFront : this.texBack;
+        const dot   = camDir.x * toPlayer.x + camDir.z * toPlayer.z;
+        const cross = camDir.x * toPlayer.z - camDir.z * toPlayer.x;
+        const angle = Math.atan2(cross, dot);
+
+        let tex;
+        const absAngle = Math.abs(angle);
+        if (absAngle < Math.PI / 4) {
+          tex = this.texFront;
+          this.sprite.scale.x = this.spriteW;
+        } else if (absAngle > 3 * Math.PI / 4) {
+          tex = this.texBack;
+          this.sprite.scale.x = this.spriteW;
+        } else {
+          tex = this.texSide;
+          this.sprite.scale.x = angle > 0 ? this.spriteW : -this.spriteW;
+        }
         if (this.sprite.material.map !== tex) {
           this.sprite.material.map = tex;
           this.sprite.material.needsUpdate = true;
