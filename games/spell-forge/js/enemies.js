@@ -99,14 +99,14 @@ class Enemy {
       new THREE.PlaneGeometry(2.4, 0.24),
       new THREE.MeshBasicMaterial({ color:0x111111, side:THREE.DoubleSide, transparent:true, opacity:0.75 })
     );
-    hbBg.position.set(0, sh + 0.1, 0);
+    hbBg.position.set(0, sh * 0.7, 0);
     this.mesh.add(hbBg);
 
     const hbFill = new THREE.Mesh(
       new THREE.PlaneGeometry(2.2, 0.16),
       new THREE.MeshBasicMaterial({ color:0x22c55e, side:THREE.DoubleSide })
     );
-    hbFill.position.set(0, sh + 0.1, 0.01);
+    hbFill.position.set(0, sh * 0.7, 0.01);
     this.mesh.add(hbFill);
     this.hpBar = hbFill;
 
