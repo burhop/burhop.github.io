@@ -91,5 +91,36 @@ const SpriteLoader = {
 
     img.src = src;
     return texture;
+  },
+
+  /** Return a horizontally-flipped copy of a texture loaded via load(). */
+  loadFlipped(src, opts) {
+    const cacheKey = src + '__flip';
+    if (this._cache[cacheKey]) return this._cache[cacheKey];
+
+    const texture = new THREE.Texture();
+    texture.colorSpace = THREE.SRGBColorSpace;
+    this._cache[cacheKey] = texture;
+
+    // Load the original first, then flip its canvas
+    const origTex = this.load(src, opts);
+    const waitForOrig = () => {
+      if (!origTex.image || !origTex.image.width) {
+        requestAnimationFrame(waitForOrig);
+        return;
+      }
+      const srcCanvas = origTex.image;
+      const w = srcCanvas.width, h = srcCanvas.height;
+      const flipCanvas = document.createElement('canvas');
+      flipCanvas.width = w; flipCanvas.height = h;
+      const ctx = flipCanvas.getContext('2d');
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(srcCanvas, 0, 0);
+      texture.image = flipCanvas;
+      texture.needsUpdate = true;
+    };
+    requestAnimationFrame(waitForOrig);
+    return texture;
   }
 };

@@ -44,7 +44,8 @@ class Enemy {
     // ── Character sprite – 4 directions ─────────────
     this.texFront = SpriteLoader.load(this.cfg.spriteImg);
     this.texBack  = SpriteLoader.load(this.cfg.spriteImgBack);
-    this.texSide  = SpriteLoader.load(this.cfg.spriteImgSide);
+    this.texSideL = SpriteLoader.load(this.cfg.spriteImgSide);
+    this.texSideR = SpriteLoader.loadFlipped(this.cfg.spriteImgSide);
     const spriteMat = new THREE.SpriteMaterial({ map:this.texFront, transparent:true, blending:THREE.NormalBlending, depthWrite:false, depthTest:false });
     this.sprite = new THREE.Sprite(spriteMat);
     this.spriteW = sw;
@@ -158,9 +159,9 @@ class Enemy {
           tex = this.texBack;
           this.sprite.scale.x = this.spriteW;
         } else {
-          tex = this.texSide;
-          this.sprite.scale.x = angle > 0 ? this.spriteW : -this.spriteW;
+          tex = angle > 0 ? this.texSideL : this.texSideR;
         }
+        this.sprite.scale.x = this.spriteW; // always positive
         if (this.sprite.material.map !== tex) {
           this.sprite.material.map = tex;
           this.sprite.material.needsUpdate = true;

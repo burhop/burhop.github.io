@@ -30,7 +30,8 @@ class Player {
     // ── Wizard sprite (billboard) – 4 directions ────
     this.texFront = SpriteLoader.load('img/wizard.png');
     this.texBack  = SpriteLoader.load('img/wizard_back.png');
-    this.texSide  = SpriteLoader.load('img/wizard_side.png');
+    this.texSideL = SpriteLoader.load('img/wizard_side.png');
+    this.texSideR = SpriteLoader.loadFlipped('img/wizard_side.png');
     const spriteMat = new THREE.SpriteMaterial({
       map: this.texBack, transparent: true,
       blending: THREE.NormalBlending,
@@ -181,10 +182,10 @@ class Player {
         tex = this.texBack;
         this.sprite.scale.x = this.spriteW;
       } else {
-        // Side view — flip for left vs right
-        tex = this.texSide;
-        this.sprite.scale.x = angle > 0 ? this.spriteW : -this.spriteW;
+        // Side view — pick left or right texture
+        tex = angle > 0 ? this.texSideL : this.texSideR;
       }
+      this.sprite.scale.x = this.spriteW; // always positive
       if (this.sprite.material.map !== tex) {
         this.sprite.material.map = tex;
         this.sprite.material.needsUpdate = true;
