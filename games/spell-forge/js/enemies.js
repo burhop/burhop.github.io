@@ -101,7 +101,7 @@ class Enemy {
       new THREE.PlaneGeometry(2.4, 0.24),
       new THREE.MeshBasicMaterial({ color:0x111111, side:THREE.DoubleSide, transparent:true, opacity:0.75 })
     );
-    hbBg.position.set(0, sh * 0.5, 0);
+    hbBg.position.set(0, sh * 0.25, 0);
     this.mesh.add(hbBg);
 
     const hbFill = new THREE.Mesh(
