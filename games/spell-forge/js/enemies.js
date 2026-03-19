@@ -279,7 +279,7 @@ class Enemy {
       const camPos = Game.camera.position.clone().sub(this.mesh.position);
       this.hpGroup.rotation.y = Math.atan2(camPos.x, camPos.z);
       const [,sph] = this.cfg.spriteSize;
-      this.hpGroup.position.y = sph * 0.35;
+      this.hpGroup.position.y = sph * 0.45;
     }
 
     // Projectiles
