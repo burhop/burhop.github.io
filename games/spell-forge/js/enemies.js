@@ -30,7 +30,7 @@ class Enemy {
     CHARGER:    { health:50,  speed:4.5, damage:10, attackRange:2.8, attackCooldown:1.2, color:0xff3333, score:10, detectionRange:40, radius:1.2, spriteSize:[3.2,3.8], spriteImg:'img/charger.png', spriteImgBack:'img/charger_back.png', spriteImgSide:'img/charger_side.png', projImg:'img/proj_fire.png', projSize:2.2 },
     ORBITER:    { health:30,  speed:2.5, damage:8,  attackRange:20,  attackCooldown:2.5, color:0x3399ff, score:15, detectionRange:50, orbitRadius:15, radius:1.0, spriteSize:[2.8,3.2], spriteImg:'img/orbiter.png', spriteImgBack:'img/orbiter_back.png', spriteImgSide:'img/orbiter_side.png', projImg:'img/proj_arcane.png', projSize:2.0 },
     TELEPORTER: { health:40,  speed:0,   damage:12, attackRange:22,  attackCooldown:1.8, color:0xff44ff, score:20, detectionRange:50, teleportCooldown:3.5, radius:1.0, spriteSize:[2.8,3.5], spriteImg:'img/teleporter.png', spriteImgBack:'img/teleporter_back.png', spriteImgSide:'img/teleporter_side.png', projImg:'img/proj_shadow.png', projSize:2.0 },
-    TANK:       { health:250, speed:1.4, damage:22, attackRange:4.5, attackCooldown:2.0, color:0x999999, score:80, detectionRange:60, radius:1.8, spriteSize:[5.0,6.0], spriteImg:'img/tank.png', spriteImgBack:'img/tank_back.png', spriteImgSide:'img/tank_side.png', projImg:'img/proj_fire.png', projSize:2.8 },
+    TANK:       { health:250, speed:1.4, damage:22, attackRange:4.5, attackCooldown:2.0, color:0x999999, score:80, detectionRange:60, radius:1.8, spriteSize:[5.0,6.0], spriteImg:'img/tank.png', spriteImgBack:'img/tank_back.png', spriteImgSide:'img/tank_side.png', projImg:'img/proj_fire.png', projSize:2.8, flipSide:true },
     SWARM:      { health:15,  speed:5.8, damage:5,  attackRange:2.2, attackCooldown:0.8, color:0x00cc55, score:5,  detectionRange:45, radius:0.6, spriteSize:[1.8,2.2], spriteImg:'img/swarm.png', spriteImgBack:'img/swarm_back.png', spriteImgSide:'img/swarm_side.png', projImg:'img/proj_arcane.png', projSize:1.4 }
   };
 
@@ -45,8 +45,12 @@ class Enemy {
     // ── Character sprite – 4 directions ─────────────
     this.texFront = SpriteLoader.load(this.cfg.spriteImg);
     this.texBack  = SpriteLoader.load(this.cfg.spriteImgBack);
-    this.texSideL = SpriteLoader.load(this.cfg.spriteImgSide);
-    this.texSideR = SpriteLoader.loadFlipped(this.cfg.spriteImgSide);
+    this.texSideL = this.cfg.flipSide
+      ? SpriteLoader.loadFlipped(this.cfg.spriteImgSide)
+      : SpriteLoader.load(this.cfg.spriteImgSide);
+    this.texSideR = this.cfg.flipSide
+      ? SpriteLoader.load(this.cfg.spriteImgSide)
+      : SpriteLoader.loadFlipped(this.cfg.spriteImgSide);
     const spriteMat = new THREE.SpriteMaterial({ map:this.texFront, transparent:true, blending:THREE.NormalBlending, depthWrite:false, depthTest:false });
     this.sprite = new THREE.Sprite(spriteMat);
     this.spriteW = sw;
