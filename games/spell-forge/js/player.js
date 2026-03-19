@@ -19,6 +19,7 @@ class Player {
     this.invincibleTimer = 0;
     this.facingDir   = new THREE.Vector3(0, 0, -1);
     this.keys        = {};
+    this.touchTarget = null; // world position to walk toward (mobile)
     this._buildModel();
     this._bindKeys();
   }
@@ -138,6 +139,16 @@ class Player {
     if (this.dashActive) {
       this.mesh.position.add(this.dashVelocity.clone().multiplyScalar(delta));
       this.dashActive = false;
+    } else if (this.touchTarget) {
+      // Touch-to-move: walk toward touch target
+      const toTarget = this.touchTarget.clone().sub(this.mesh.position);
+      toTarget.y = 0;
+      if (toTarget.length() > 0.5) {
+        moveVec.copy(toTarget.normalize().multiplyScalar(this.moveSpeed * delta));
+        this.mesh.position.add(moveVec);
+      } else {
+        this.touchTarget = null; // arrived
+      }
     } else if (moveVec.length() > 0.01) {
       moveVec.normalize().multiplyScalar(this.moveSpeed * delta);
       this.mesh.position.add(moveVec);

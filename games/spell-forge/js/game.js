@@ -100,6 +100,43 @@ const Game = {
     });
     window.addEventListener('contextmenu', e => e.preventDefault());
 
+    // ── Mobile touch-to-move ──────────────────────────
+    this.isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (this.isMobile) {
+      this.aimMode = 'travel'; // default to travel aim on mobile
+      document.getElementById('aim-mode-label').textContent = 'Travel';
+      // Disable gesture canvas on mobile (use tap spell icons instead)
+      const gc = document.getElementById('gesture-canvas');
+      if (gc) gc.style.pointerEvents = 'none';
+    }
+
+    const _touchMove = (e) => {
+      if (this.state !== 'PLAYING' || !this.player) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+      // Ignore touches on the HUD/spell-bar area (bottom 90px)
+      if (touch.clientY > window.innerHeight - 90) return;
+      e.preventDefault();
+      // Raycast touch to ground
+      const ndc = new THREE.Vector2(
+        (touch.clientX / window.innerWidth) * 2 - 1,
+        -(touch.clientY / window.innerHeight) * 2 + 1
+      );
+      this.raycaster.setFromCamera(ndc, this.camera);
+      const hitPoint = new THREE.Vector3();
+      if (this.raycaster.ray.intersectPlane(this.groundPlane, hitPoint)) {
+        this.player.touchTarget = hitPoint.clone();
+        this.player.touchTarget.y = 0;
+        // Also update mouse NDC for aim
+        this.mouseNDC.copy(ndc);
+      }
+    };
+    window.addEventListener('touchstart', _touchMove, { passive: false });
+    window.addEventListener('touchmove', _touchMove, { passive: false });
+    window.addEventListener('touchend', () => {
+      if (this.player) this.player.touchTarget = null;
+    });
+
     // ── Touchable spell icons ──────────────────────────
     const spellNames = ['FIREBALL','ICE_SHARD','LIGHTNING','SHIELD','TORNADO'];
     for (let i = 0; i < 5; i++) {
