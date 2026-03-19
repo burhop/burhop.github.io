@@ -11,6 +11,7 @@ class Enemy {
     this.attackTimer   = 0;
     this.teleportTimer = 0;
     this.projectiles   = [];
+    this.knockbackVel  = new THREE.Vector3(); // smooth bounce velocity
 
     const cfg  = Enemy.CONFIG[type];
     this.cfg        = cfg;
@@ -159,7 +160,7 @@ class Enemy {
           tex = this.texBack;
           this.sprite.scale.x = this.spriteW;
         } else {
-          tex = angle > 0 ? this.texSideL : this.texSideR;
+          tex = angle > 0 ? this.texSideR : this.texSideL;
         }
         this.sprite.scale.x = this.spriteW; // always positive
         if (this.sprite.material.map !== tex) {
@@ -251,6 +252,15 @@ class Enemy {
           this.mesh.position.add(dir);
         }
         break;
+    }
+
+    // ── Apply knockback velocity (smooth bounce) ────────
+    if (this.knockbackVel.length() > 0.05) {
+      this.mesh.position.add(this.knockbackVel.clone().multiplyScalar(delta));
+      // Friction: decelerate rapidly
+      this.knockbackVel.multiplyScalar(Math.max(0, 1 - 6 * delta));
+    } else {
+      this.knockbackVel.set(0, 0, 0);
     }
 
     // Clamp inside arena

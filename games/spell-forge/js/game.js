@@ -61,7 +61,18 @@ const Game = {
     // ── Mouse aim tracking ─────────────────────────────
     this.mouseNDC = new THREE.Vector2(0, 0);
     this.raycaster = new THREE.Raycaster();
-    this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // Y=0
+    this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    this.aimMode = 'mouse'; // 'mouse' or 'travel'
+
+    // Aim mode toggle button
+    const aimBtn = document.getElementById('aim-toggle');
+    if (aimBtn) {
+      aimBtn.addEventListener('pointerdown', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        this.aimMode = this.aimMode === 'mouse' ? 'travel' : 'mouse';
+        document.getElementById('aim-mode-label').textContent = this.aimMode === 'mouse' ? 'Mouse' : 'Travel';
+      });
+    }
 
     const gestureCanvas = document.getElementById('gesture-canvas');
     Gestures.init(gestureCanvas, (gesture) => this._onGesture(gesture));
@@ -346,8 +357,7 @@ const Game = {
 
   _castSpell(name) {
     if (!this.player || !this.player.isAlive) return;
-    // Aim toward mouse cursor position on the ground plane
-    const aimDir = this._getMouseAimDir();
+    const aimDir = this.aimMode === 'mouse' ? this._getMouseAimDir() : this.player.facingDir.clone();
     const success = this.spellManager.cast(name, this.player, aimDir);
     if (success) {
       const spell = SPELL_DEFS[name];
@@ -446,24 +456,24 @@ const Game = {
       // ── Shield continuous bounce ─────────────────────
       if (this.player.shielded) {
         const SHIELD_R = 3.0;
-        const BOUNCE   = 15;
+        const BOUNCE_SPEED = 35; // initial knockback velocity
         this.waveManager.enemies.forEach(e => {
           if (!e.alive) return;
           const diff = e.mesh.position.clone().sub(this.player.mesh.position);
           diff.y = 0;
           const dist = diff.length();
           if (dist < SHIELD_R && dist > 0.01) {
-            // Push enemy out
-            const push = diff.normalize().multiplyScalar(BOUNCE * delta * 60);
-            e.mesh.position.add(push);
-            // Small damage + brief stun
-            e.takeDamage(5 * delta * 10, 'stun', 0.15);
-            // Spark effect (throttled)
-            if (Math.random() < 0.15) {
-              Particles.burst(
-                e.mesh.position.clone().add(diff.normalize().multiplyScalar(-0.5)).add(new THREE.Vector3(0, 1.5, 0)),
-                0xbb66ff, 8, 2
-              );
+            // Apply velocity impulse (not position teleport)
+            const pushDir = diff.normalize();
+            e.knockbackVel.copy(pushDir.multiplyScalar(BOUNCE_SPEED));
+            // Small damage + stun
+            e.takeDamage(Math.ceil(8 * delta), 'stun', 0.3);
+            // Spark at contact point
+            if (Math.random() < 0.2) {
+              const sparkPos = this.player.mesh.position.clone()
+                .add(pushDir.clone().multiplyScalar(SHIELD_R * 0.9))
+                .add(new THREE.Vector3(0, 1.5, 0));
+              Particles.burst(sparkPos, 0xbb66ff, 10, 2);
             }
             if (!e.alive) this.onEnemyKilled();
           }
