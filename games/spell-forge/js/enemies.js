@@ -27,11 +27,11 @@ class Enemy {
   }
 
   static CONFIG = {
-    CHARGER:    { health:50,  speed:4.5, damage:10, attackRange:2.8, attackCooldown:1.2, color:0xff3333, score:10, detectionRange:40, radius:1.2, spriteSize:[3.2,3.8], spriteImg:'img/charger.png', spriteImgBack:'img/charger_back.png', spriteImgSide:'img/charger_side.png' },
-    ORBITER:    { health:30,  speed:2.5, damage:8,  attackRange:20,  attackCooldown:2.5, color:0x3399ff, score:15, detectionRange:50, orbitRadius:15, radius:1.0, spriteSize:[2.8,3.2], spriteImg:'img/orbiter.png', spriteImgBack:'img/orbiter_back.png', spriteImgSide:'img/orbiter_side.png' },
-    TELEPORTER: { health:40,  speed:0,   damage:12, attackRange:22,  attackCooldown:1.8, color:0xff44ff, score:20, detectionRange:50, teleportCooldown:3.5, radius:1.0, spriteSize:[2.8,3.5], spriteImg:'img/teleporter.png', spriteImgBack:'img/teleporter_back.png', spriteImgSide:'img/teleporter_side.png' },
-    TANK:       { health:250, speed:1.4, damage:22, attackRange:4.5, attackCooldown:2.0, color:0x999999, score:80, detectionRange:60, radius:1.8, spriteSize:[5.0,6.0], spriteImg:'img/tank.png', spriteImgBack:'img/tank_back.png', spriteImgSide:'img/tank_side.png' },
-    SWARM:      { health:15,  speed:5.8, damage:5,  attackRange:2.2, attackCooldown:0.8, color:0x00cc55, score:5,  detectionRange:45, radius:0.6, spriteSize:[1.8,2.2], spriteImg:'img/swarm.png', spriteImgBack:'img/swarm_back.png', spriteImgSide:'img/swarm_side.png' }
+    CHARGER:    { health:50,  speed:4.5, damage:10, attackRange:2.8, attackCooldown:1.2, color:0xff3333, score:10, detectionRange:40, radius:1.2, spriteSize:[3.2,3.8], spriteImg:'img/charger.png', spriteImgBack:'img/charger_back.png', spriteImgSide:'img/charger_side.png', projImg:'img/proj_fire.png', projSize:2.2 },
+    ORBITER:    { health:30,  speed:2.5, damage:8,  attackRange:20,  attackCooldown:2.5, color:0x3399ff, score:15, detectionRange:50, orbitRadius:15, radius:1.0, spriteSize:[2.8,3.2], spriteImg:'img/orbiter.png', spriteImgBack:'img/orbiter_back.png', spriteImgSide:'img/orbiter_side.png', projImg:'img/proj_arcane.png', projSize:2.0 },
+    TELEPORTER: { health:40,  speed:0,   damage:12, attackRange:22,  attackCooldown:1.8, color:0xff44ff, score:20, detectionRange:50, teleportCooldown:3.5, radius:1.0, spriteSize:[2.8,3.5], spriteImg:'img/teleporter.png', spriteImgBack:'img/teleporter_back.png', spriteImgSide:'img/teleporter_side.png', projImg:'img/proj_shadow.png', projSize:2.0 },
+    TANK:       { health:250, speed:1.4, damage:22, attackRange:4.5, attackCooldown:2.0, color:0x999999, score:80, detectionRange:60, radius:1.8, spriteSize:[5.0,6.0], spriteImg:'img/tank.png', spriteImgBack:'img/tank_back.png', spriteImgSide:'img/tank_side.png', projImg:'img/proj_fire.png', projSize:2.8 },
+    SWARM:      { health:15,  speed:5.8, damage:5,  attackRange:2.2, attackCooldown:0.8, color:0x00cc55, score:5,  detectionRange:45, radius:0.6, spriteSize:[1.8,2.2], spriteImg:'img/swarm.png', spriteImgBack:'img/swarm_back.png', spriteImgSide:'img/swarm_side.png', projImg:'img/proj_arcane.png', projSize:1.4 }
   };
 
   _buildMesh(position) {
@@ -279,27 +279,30 @@ class Enemy {
       const camPos = Game.camera.position.clone().sub(this.mesh.position);
       this.hpGroup.rotation.y = Math.atan2(camPos.x, camPos.z);
       const [,sph] = this.cfg.spriteSize;
-      this.hpGroup.position.y = sph * 0.25;
+      this.hpGroup.position.y = sph * 0.35;
     }
 
     // Projectiles
     this.projectiles = this.projectiles.filter(p => {
       p.lifetime -= delta;
       p.mesh.position.add(p.velocity.clone().multiplyScalar(delta));
-      // Animate ring + glow
+      // Animate sprite pulse
+      if (p.sprite) {
+        const pulse = 1 + Math.sin(Date.now() * 0.012) * 0.2;
+        const sz = p.projSize || 2.0;
+        p.sprite.scale.set(sz * pulse, sz * pulse, 1);
+        p.sprite.material.rotation += delta * 2;
+      }
+      // Spin ring
       if (p.ring) {
         p.ring.rotation.x += delta * 8;
         p.ring.rotation.y += delta * 6;
       }
-      if (p.glow) {
-        const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.2;
-        p.glow.scale.setScalar(pulse);
-      }
       // Particle trail
       p._trailTimer = (p._trailTimer || 0) - delta;
       if (p._trailTimer <= 0 && p.color) {
-        p._trailTimer = 0.06;
-        Particles.burst(p.mesh.position.clone(), p.color, 3, 1.5, 0.2);
+        p._trailTimer = 0.04;
+        Particles.burst(p.mesh.position.clone(), p.color, 5, 2, 0.25);
       }
       if (p.lifetime <= 0) { this.scene.remove(p.mesh); return false; }
       return true;
@@ -315,39 +318,44 @@ class Enemy {
     const group = new THREE.Group();
     group.position.copy(origin);
 
-    // Bright core orb
+    // ── Main projectile sprite (like wizard fireball) ────
+    const tex = new THREE.TextureLoader().load(this.cfg.projImg);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const spriteMat = new THREE.SpriteMaterial({
+      map: tex, transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false, depthTest: false,
+      color: color
+    });
+    const sprite = new THREE.Sprite(spriteMat);
+    const sz = this.cfg.projSize || 2.0;
+    sprite.scale.set(sz, sz, 1);
+    group.add(sprite);
+
+    // ── Bright white core ──────────────────────────────
     const core = new THREE.Mesh(
-      new THREE.SphereGeometry(0.18, 10, 10),
+      new THREE.SphereGeometry(0.12, 8, 8),
       new THREE.MeshBasicMaterial({ color:0xffffff, blending:THREE.AdditiveBlending })
     );
     group.add(core);
 
-    // Coloured outer glow
-    const glow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.35, 10, 10),
-      new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.45, blending:THREE.AdditiveBlending })
-    );
-    group.add(glow);
-
-    // Spinning energy ring
+    // ── Spinning energy ring ───────────────────────────
     const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.4, 0.04, 6, 16),
-      new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.7, blending:THREE.AdditiveBlending })
+      new THREE.TorusGeometry(sz * 0.25, 0.03, 6, 16),
+      new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending })
     );
     group.add(ring);
 
-    // Point light
-    const light = new THREE.PointLight(color, 3.5, 8);
+    // ── Point light ────────────────────────────────────
+    const light = new THREE.PointLight(color, 4, 10);
     group.add(light);
 
     this.scene.add(group);
-
-    const projData = {
+    this.projectiles.push({
       mesh: group, velocity: dir.multiplyScalar(14), lifetime: 2.5,
-      damage: this.cfg.damage, ring, glow, core, _trailTimer: 0, color
-    };
-    this.projectiles.push(projData);
-    Particles.burst(origin, color, 18, 4, 0.4);
+      damage: this.cfg.damage, ring, sprite, core, _trailTimer: 0, color, projSize: sz
+    });
+    Particles.burst(origin, color, 25, 5, 0.4);
   }
 
   checkProjectileHits(player) {
