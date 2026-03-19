@@ -17,6 +17,7 @@ class Player {
     this.shieldTimer  = 0;
     this.shieldAbsorb = 100;
     this.invincibleTimer = 0;
+    this.facingDir   = new THREE.Vector3(0, 0, -1);
     this.keys        = {};
     this._buildModel();
     this._bindKeys();
@@ -156,12 +157,14 @@ class Player {
     if (typeof Game !== 'undefined' && Game.camera) {
       // Work out angle from camera's perspective
       const camDir = Game.camera.position.clone().sub(this.mesh.position).normalize();
+      // Player faces the direction of movement, or forward into the scene when idle
       let facingDir;
       if (moveVec.length() > 0.001) {
         facingDir = moveVec.clone().normalize();
       } else {
         facingDir = Game._getCameraForward();
       }
+      this.facingDir.copy(facingDir); // store for spell aim
       // Signed angle between camDir and facingDir in XZ plane
       const dot   = camDir.x * facingDir.x + camDir.z * facingDir.z;
       const cross = camDir.x * facingDir.z - camDir.z * facingDir.x;

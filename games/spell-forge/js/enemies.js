@@ -188,8 +188,6 @@ class Enemy {
         if (!stunned && dist < this.cfg.detectionRange) {
           const dir = toPlayer.clone().normalize().multiplyScalar(spd * delta);
           this.mesh.position.add(dir);
-          if (dir.x < 0) this.sprite.scale.x = -Math.abs(this.sprite.scale.x);
-          else if (dir.x > 0) this.sprite.scale.x = Math.abs(this.sprite.scale.x);
         }
         break;
 
@@ -204,8 +202,6 @@ class Enemy {
         const dz    = (tz - this.mesh.position.z) * step;
         this.mesh.position.x += dx;
         this.mesh.position.z += dz;
-        if (dx < 0) this.sprite.scale.x = -Math.abs(this.sprite.scale.x);
-        else if (dx > 0) this.sprite.scale.x = Math.abs(this.sprite.scale.x);
         if (this.orbitRing) this.orbitRing.rotation.y += delta * 2.5;
         if (this.attackTimer <= 0 && dist < 35) {
           this.attackTimer = this.cfg.attackCooldown;
@@ -238,8 +234,6 @@ class Enemy {
         if (!stunned && dist < this.cfg.detectionRange) {
           const dir = toPlayer.clone().normalize().multiplyScalar(spd * delta);
           this.mesh.position.add(dir);
-          if (dir.x < 0) this.sprite.scale.x = -Math.abs(this.sprite.scale.x);
-          else if (dir.x > 0) this.sprite.scale.x = Math.abs(this.sprite.scale.x);
         }
         if (this.attackTimer <= 0 && dist < 7) {
           this.attackTimer = this.cfg.attackCooldown;
@@ -254,8 +248,6 @@ class Enemy {
           dir.z += Math.cos(this.age * 5 + this.mesh.id) * 0.4;
           dir.normalize().multiplyScalar(spd * delta);
           this.mesh.position.add(dir);
-          if (dir.x < 0) this.sprite.scale.x = -Math.abs(this.sprite.scale.x);
-          else if (dir.x > 0) this.sprite.scale.x = Math.abs(this.sprite.scale.x);
         }
         break;
     }

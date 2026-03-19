@@ -323,7 +323,7 @@ const Game = {
 
   _castSpell(name) {
     if (!this.player || !this.player.isAlive) return;
-    const fwd = this._getCameraForward();
+    const fwd = this.player.facingDir.clone();
     const success = this.spellManager.cast(name, this.player, fwd);
     if (success) {
       const spell = SPELL_DEFS[name];
