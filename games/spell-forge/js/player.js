@@ -20,6 +20,7 @@ class Player {
     this.facingDir   = new THREE.Vector3(0, 0, -1);
     this.keys        = {};
     this.touchTarget = null; // world position to walk toward (mobile)
+    this.godMode     = false;
     this._buildModel();
     this._bindKeys();
   }
@@ -106,6 +107,13 @@ class Player {
     window.addEventListener('keydown', e => {
       this.keys[e.code] = true;
       if (e.code === 'Space') { e.preventDefault(); this.dash(); }
+      if (e.code === 'KeyE' && e.ctrlKey) {
+        e.preventDefault();
+        this.godMode = !this.godMode;
+        // Flash brief indicator
+        const el = document.getElementById('build-version');
+        if (el) { el.textContent = this.godMode ? '☆ GOD MODE ON ☆' : 'v' + window.GAME_VERSION; }
+      }
     });
     window.addEventListener('keyup', e => { this.keys[e.code] = false; });
   }
@@ -291,7 +299,7 @@ class Player {
   }
 
   takeDamage(amount) {
-    if (!this.isAlive || this.invincibleTimer > 0) return;
+    if (!this.isAlive || this.invincibleTimer > 0 || this.godMode) return;
     if (this.shielded) {
       this.shieldAbsorb -= amount;
       Particles.burst(this.mesh.position.clone().add(new THREE.Vector3(0, 2, 0)), 0xbb66ff, 25, 4);
