@@ -404,6 +404,34 @@ const Game = {
       this.waveManager.update(delta, this.player.mesh.position);
       this.spellManager.update(delta);
       this.spellManager.checkCollisions(this.waveManager.enemies);
+
+      // ── Shield continuous bounce ─────────────────────
+      if (this.player.shielded) {
+        const SHIELD_R = 3.0;
+        const BOUNCE   = 15;
+        this.waveManager.enemies.forEach(e => {
+          if (!e.alive) return;
+          const diff = e.mesh.position.clone().sub(this.player.mesh.position);
+          diff.y = 0;
+          const dist = diff.length();
+          if (dist < SHIELD_R && dist > 0.01) {
+            // Push enemy out
+            const push = diff.normalize().multiplyScalar(BOUNCE * delta * 60);
+            e.mesh.position.add(push);
+            // Small damage + brief stun
+            e.takeDamage(5 * delta * 10, 'stun', 0.15);
+            // Spark effect (throttled)
+            if (Math.random() < 0.15) {
+              Particles.burst(
+                e.mesh.position.clone().add(diff.normalize().multiplyScalar(-0.5)).add(new THREE.Vector3(0, 1.5, 0)),
+                0xbb66ff, 8, 2
+              );
+            }
+            if (!e.alive) this.onEnemyKilled();
+          }
+        });
+      }
+
       Particles.update(delta);
 
       if (this.waveManager.waveDone) {
