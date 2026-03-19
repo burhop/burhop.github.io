@@ -58,6 +58,11 @@ const Game = {
     Particles.init(this.scene);
     Particles.createAmbient(250);
 
+    // ── Mouse aim tracking ─────────────────────────────
+    this.mouseNDC = new THREE.Vector2(0, 0);
+    this.raycaster = new THREE.Raycaster();
+    this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // Y=0
+
     const gestureCanvas = document.getElementById('gesture-canvas');
     Gestures.init(gestureCanvas, (gesture) => this._onGesture(gesture));
 
@@ -78,8 +83,26 @@ const Game = {
         this.camPitch  = Math.max(0.15, Math.min(1.1, this.camPitch + (e.clientY - this.lastMouseY) * 0.004));
       }
       this.lastMouseX = e.clientX; this.lastMouseY = e.clientY;
+      // Track normalised mouse for aim raycasting
+      this.mouseNDC.x =  (e.clientX / window.innerWidth)  * 2 - 1;
+      this.mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
     });
     window.addEventListener('contextmenu', e => e.preventDefault());
+
+    // ── Touchable spell icons ──────────────────────────
+    const spellNames = ['FIREBALL','ICE_SHARD','LIGHTNING','SHIELD','TORNADO'];
+    for (let i = 0; i < 5; i++) {
+      const el = document.getElementById('spell-' + i);
+      if (el) {
+        el.style.cursor = 'pointer';
+        el.style.userSelect = 'none';
+        el.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (this.state === 'PLAYING') this._castSpell(spellNames[i]);
+        });
+      }
+    }
     window.addEventListener('wheel', (e) => {
       if (this.state === 'PLAYING') this.camDist = Math.max(8, Math.min(25, this.camDist + e.deltaY * 0.02));
     });
@@ -323,12 +346,27 @@ const Game = {
 
   _castSpell(name) {
     if (!this.player || !this.player.isAlive) return;
-    const fwd = this.player.facingDir.clone();
-    const success = this.spellManager.cast(name, this.player, fwd);
+    // Aim toward mouse cursor position on the ground plane
+    const aimDir = this._getMouseAimDir();
+    const success = this.spellManager.cast(name, this.player, aimDir);
     if (success) {
       const spell = SPELL_DEFS[name];
       UI.showSpellCastFlash(spell.color);
     }
+  },
+
+  _getMouseAimDir() {
+    // Raycast from camera through mouse onto ground plane
+    this.raycaster.setFromCamera(this.mouseNDC, this.camera);
+    const hitPoint = new THREE.Vector3();
+    const hit = this.raycaster.ray.intersectPlane(this.groundPlane, hitPoint);
+    if (hit) {
+      const dir = hitPoint.sub(this.player.mesh.position);
+      dir.y = 0;
+      if (dir.length() > 0.1) return dir.normalize();
+    }
+    // Fallback to player facing direction
+    return this.player.facingDir.clone();
   },
 
   _getCameraForward() {
