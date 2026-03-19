@@ -115,17 +115,54 @@ class Projectile {
   }
 
   _buildTornado() {
-    // Swirling green torus
-    const geo = new THREE.TorusGeometry(0.7, 0.2, 8, 24);
-    const mat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
-    this.vortex = new THREE.Mesh(geo, mat);
-    this.mesh.add(this.vortex);
-    const geo2 = new THREE.TorusGeometry(1.0, 0.1, 6, 24);
-    const mat2 = new THREE.MeshBasicMaterial({ color: 0x44ffaa, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending });
-    const ring2 = new THREE.Mesh(geo2, mat2);
-    this.mesh.add(ring2);
-    this.light = new THREE.PointLight(0x00ff88, 5, 12);
+    // ── Vortex funnel: stacked spinning rings ────────
+    this.vortexRings = [];
+    const ringCount = 6;
+    for (let i = 0; i < ringCount; i++) {
+      const t = i / (ringCount - 1); // 0 at bottom, 1 at top
+      const radius = 0.3 + t * 0.9;
+      const geo = new THREE.TorusGeometry(radius, 0.06, 6, 20);
+      const mat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color().lerpColors(new THREE.Color(0x00ff88), new THREE.Color(0x44ffdd), t),
+        transparent: true, opacity: 0.7 - t * 0.25,
+        blending: THREE.AdditiveBlending
+      });
+      const ring = new THREE.Mesh(geo, mat);
+      ring.position.y = -1.0 + t * 2.5;
+      ring.rotation.x = Math.PI / 2;
+      ring.userData = { baseY: ring.position.y, speed: 4 + i * 1.5, phase: i * 0.8 };
+      this.mesh.add(ring);
+      this.vortexRings.push(ring);
+    }
+
+    // ── Glowing centre column ────────────────────────
+    const colGeo = new THREE.CylinderGeometry(0.15, 0.05, 2.5, 8);
+    const colMat = new THREE.MeshBasicMaterial({ color: 0xaaffcc, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending });
+    this.vortexCol = new THREE.Mesh(colGeo, colMat);
+    this.vortexCol.position.y = 0.25;
+    this.mesh.add(this.vortexCol);
+
+    // ── Orbiting debris particles ────────────────────
+    this.debrisGroup = new THREE.Group();
+    for (let i = 0; i < 8; i++) {
+      const dGeo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+      const dMat = new THREE.MeshBasicMaterial({ color: 0x88ffaa, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
+      const d = new THREE.Mesh(dGeo, dMat);
+      const a = (i / 8) * Math.PI * 2;
+      d.position.set(Math.cos(a) * 0.6, -0.5 + Math.random() * 2, Math.sin(a) * 0.6);
+      d.userData = { angle: a, height: d.position.y, radius: 0.4 + Math.random() * 0.5 };
+      this.debrisGroup.add(d);
+    }
+    this.mesh.add(this.debrisGroup);
+
+    // ── Lights ───────────────────────────────────────
+    this.light = new THREE.PointLight(0x00ff88, 6, 14);
     this.mesh.add(this.light);
+    const light2 = new THREE.PointLight(0x44ffdd, 3, 8);
+    light2.position.y = 1.5;
+    this.mesh.add(light2);
+
+    this._trailTimer = 0;
   }
 
   _buildGeneric() {
@@ -182,7 +219,38 @@ class Projectile {
     }
 
     if (this.spellName === 'TORNADO') {
-      if (this.vortex) { this.vortex.rotation.z += delta * 4; this.vortex.rotation.y += delta * 6; }
+      // Spin each vortex ring at different speeds
+      if (this.vortexRings) {
+        this.vortexRings.forEach(ring => {
+          ring.rotation.z += delta * ring.userData.speed;
+          ring.position.y = ring.userData.baseY + Math.sin(t * 3 + ring.userData.phase) * 0.15;
+        });
+      }
+      // Pulse column
+      if (this.vortexCol) {
+        this.vortexCol.rotation.y += delta * 3;
+        const p = 1 + Math.sin(t * 5) * 0.15;
+        this.vortexCol.scale.set(p, 1, p);
+      }
+      // Orbit debris
+      if (this.debrisGroup) {
+        this.debrisGroup.children.forEach(d => {
+          d.userData.angle += delta * 5;
+          const r = d.userData.radius + Math.sin(t * 2) * 0.1;
+          d.position.x = Math.cos(d.userData.angle) * r;
+          d.position.z = Math.sin(d.userData.angle) * r;
+          d.position.y = d.userData.height + Math.sin(t * 4 + d.userData.angle) * 0.3;
+          d.rotation.x += delta * 8;
+          d.rotation.z += delta * 6;
+        });
+      }
+      // Green wind trail
+      this._trailTimer = (this._trailTimer || 0) - delta;
+      if (this._trailTimer <= 0) {
+        this._trailTimer = 0.04;
+        Particles.burst(this.mesh.position.clone().add(new THREE.Vector3(0, Math.random() * 2 - 0.5, 0)), 0x44ffaa, 3, 2, 0.3);
+      }
+      if (this.light) this.light.intensity = 5 + Math.sin(t * 6) * 2;
       // Homing
       if (typeof Game !== 'undefined') {
         let nearest = null, bestDist = Infinity;

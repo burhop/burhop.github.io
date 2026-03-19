@@ -286,6 +286,21 @@ class Enemy {
     this.projectiles = this.projectiles.filter(p => {
       p.lifetime -= delta;
       p.mesh.position.add(p.velocity.clone().multiplyScalar(delta));
+      // Animate ring + glow
+      if (p.ring) {
+        p.ring.rotation.x += delta * 8;
+        p.ring.rotation.y += delta * 6;
+      }
+      if (p.glow) {
+        const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.2;
+        p.glow.scale.setScalar(pulse);
+      }
+      // Particle trail
+      p._trailTimer = (p._trailTimer || 0) - delta;
+      if (p._trailTimer <= 0 && p.color) {
+        p._trailTimer = 0.06;
+        Particles.burst(p.mesh.position.clone(), p.color, 3, 1.5, 0.2);
+      }
       if (p.lifetime <= 0) { this.scene.remove(p.mesh); return false; }
       return true;
     });
@@ -296,16 +311,43 @@ class Enemy {
     const dir    = targetPos.clone().add(new THREE.Vector3(0,2,0)).sub(origin);
     dir.normalize();
 
-    // Projectile sphere with sprite material for distinctiveness
-    const geo  = new THREE.SphereGeometry(0.25, 8, 8);
-    const mat  = new THREE.MeshBasicMaterial({ color:this.cfg.color, blending:THREE.AdditiveBlending });
-    const mesh = new THREE.Mesh(geo, mat);
-    const light = new THREE.PointLight(this.cfg.color, 2.5, 6);
-    mesh.add(light);
-    mesh.position.copy(origin);
-    this.scene.add(mesh);
-    this.projectiles.push({ mesh, velocity: dir.multiplyScalar(14), lifetime: 2.5, damage:this.cfg.damage });
-    Particles.burst(origin, this.cfg.color, 12, 3, 0.3);
+    const color = this.cfg.color;
+    const group = new THREE.Group();
+    group.position.copy(origin);
+
+    // Bright core orb
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 10, 10),
+      new THREE.MeshBasicMaterial({ color:0xffffff, blending:THREE.AdditiveBlending })
+    );
+    group.add(core);
+
+    // Coloured outer glow
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.35, 10, 10),
+      new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.45, blending:THREE.AdditiveBlending })
+    );
+    group.add(glow);
+
+    // Spinning energy ring
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.4, 0.04, 6, 16),
+      new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.7, blending:THREE.AdditiveBlending })
+    );
+    group.add(ring);
+
+    // Point light
+    const light = new THREE.PointLight(color, 3.5, 8);
+    group.add(light);
+
+    this.scene.add(group);
+
+    const projData = {
+      mesh: group, velocity: dir.multiplyScalar(14), lifetime: 2.5,
+      damage: this.cfg.damage, ring, glow, core, _trailTimer: 0, color
+    };
+    this.projectiles.push(projData);
+    Particles.burst(origin, color, 18, 4, 0.4);
   }
 
   checkProjectileHits(player) {
