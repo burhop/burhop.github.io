@@ -412,24 +412,34 @@ class SpellManager {
       }
     });
 
+    const hitPos = bestEnemy 
+      ? bestEnemy.mesh.position.clone().add(new THREE.Vector3(0, 2, 0))
+      : origin.clone().add(fwd.multiplyScalar(spell.range || 40));
+
     if (bestEnemy) {
-      const hitPos = bestEnemy.mesh.position.clone().add(new THREE.Vector3(0, 2, 0));
       bestEnemy.takeDamage(spell.damage, 'stun', 1.2);
       UI.showDamageNumber(bestEnemy.mesh.position, spell.damage, spell.color);
-      Particles.lightning(origin, hitPos, spell.color);
       Game.addScore(20);
 
+      // Hit effect blast for combo lightnings
       if (name === 'FIRE_LIGHTNING' || name === 'ICE_LIGHTNING') {
-        const proj = new Projectile(name, hitPos, fwd, this.scene);
-        proj.velocity.set(0,0,0);
-        proj.lifetime = 0.4;
+        const tex = name === 'FIRE_LIGHTNING' ? SpellTextures.fire_lightning : SpellTextures.ice_lightning;
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+        const sprite = new THREE.Sprite(mat);
+        sprite.scale.set(4.5, 4.5, 1);
+        sprite.position.copy(hitPos);
+        this.scene.add(sprite);
+        
+        const proj = { active: true, lifetime: 0.35, update: function(delta) {
+           this.lifetime -= delta; 
+           sprite.material.opacity = this.lifetime / 0.35;
+           if (this.lifetime <= 0) { this.scene.remove(sprite); this.active = false; }
+        }, scene: this.scene, destroy: function() { this.scene.remove(sprite); this.active = false; } };
         this.projectiles.push(proj);
       }
-    } else {
-      const proj = new Projectile(name, origin, fwd, this.scene);
-      proj.velocity = fwd.multiplyScalar(50); proj.lifetime = 0.5;
-      this.projectiles.push(proj);
     }
+    
+    Particles.lightning(origin, hitPos, spell.color);
     Particles.burst(origin, spell.color, 40, 6);
   }
 
