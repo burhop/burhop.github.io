@@ -5,7 +5,12 @@ const SPELL_DEFS = {
   ICE_SHARD: { id:1, name:'Ice Shard', icon:'❄️',  gesture:'LINE_DOWN', key:'2', manaCost:12, damage:20, speed:28, lifetime:2,   cooldown:0.3, color:0x88eeff, size:0.4,  effect:'slow'    },
   LIGHTNING: { id:2, name:'Lightning', icon:'⚡',  gesture:'ZIGZAG',    key:'3', manaCost:20, damage:40, speed:0,  lifetime:0.2, cooldown:1.0, color:0xffee00, size:0.2,  effect:'stun', range:45 },
   SHIELD:    { id:3, name:'Shield',    icon:'🛡️',  gesture:'CIRCLE',    key:'4', manaCost:25, damage:0,  cooldown:8.0, duration:5, color:0x9933ff, effect:'shield'   },
-  TORNADO:   { id:4, name:'Tornado',   icon:'🌪️',  gesture:'SPIRAL',    key:'5', manaCost:30, damage:15, speed:8,  lifetime:5,   cooldown:3.0, color:0x00ff88, size:1.2,  effect:'pull'    }
+  TORNADO:   { id:4, name:'Tornado',   icon:'🌪️',  gesture:'SPIRAL',    key:'5', manaCost:30, damage:15, speed:8,  lifetime:5,   cooldown:3.0, color:0x00ff88, size:1.2,  effect:'pull'    },
+  FIRE_ICE:      { id:5, name:'Fire Ice', icon:'🔥❄️', gesture:'',  key:'', manaCost:35, damage:40, speed:24, lifetime:3,   cooldown:1.0, color:0xaa44cc, size:0.8,  aoe:4,    effect:'explode' },
+  FIRE_TORNADO:  { id:6, name:'Fire Tornado', icon:'🔥🌪️', gesture:'', key:'', manaCost:40, damage:25, speed:8,  lifetime:5,   cooldown:3.0, color:0xff4400, size:1.4,  effect:'pull' },
+  ICE_TORNADO:   { id:7, name:'Ice Tornado',  icon:'❄️🌪️', gesture:'', key:'', manaCost:40, damage:25, speed:8,  lifetime:5,   cooldown:3.0, color:0x88eeff, size:1.4,  effect:'pull' },
+  FIRE_LIGHTNING:{ id:8, name:'Fire Lightning', icon:'🔥⚡', gesture:'', key:'', manaCost:50, damage:60, speed:0,  lifetime:0.2, cooldown:1.5, color:0xff6600, size:0.3,  effect:'stun', range:55 },
+  ICE_LIGHTNING: { id:9, name:'Ice Lightning', icon:'❄️⚡', gesture:'', key:'', manaCost:50, damage:50, speed:0,  lifetime:0.2, cooldown:1.5, color:0x44aaff, size:0.3,  effect:'stun', range:55 }
 };
 
 const GESTURE_MAP = {};
@@ -16,6 +21,13 @@ const SpellTextures = {};
 const loader = new THREE.TextureLoader();
 SpellTextures.fireball = loader.load('img/fireball.png');
 SpellTextures.iceshard = loader.load('img/iceshard.png');
+
+// Combo overrides
+SpellTextures.fire_ice = loader.load('img/fire_ice_projectile.png');
+SpellTextures.fire_tornado = loader.load('img/fire_tornado.png');
+SpellTextures.ice_tornado = loader.load('img/ice_tornado.png');
+SpellTextures.fire_lightning = loader.load('img/fire_lightning.png');
+SpellTextures.ice_lightning = loader.load('img/ice_lightning.png');
 
 // ══════════════════════════════════════════════════════════════
 // Projectile
@@ -42,8 +54,26 @@ class Projectile {
       case 'FIREBALL':  this._buildFireball(); break;
       case 'ICE_SHARD': this._buildIceShard(); break;
       case 'TORNADO':   this._buildTornado();  break;
+      case 'FIRE_ICE':  this._buildSpriteProjectile(SpellTextures.fire_ice, 3.0, 0xffaaff); break;
+      case 'FIRE_TORNADO': this._buildSpriteProjectile(SpellTextures.fire_tornado, 4.0, 0xff4400); break;
+      case 'ICE_TORNADO': this._buildSpriteProjectile(SpellTextures.ice_tornado, 4.0, 0x44ccff); break;
+      case 'FIRE_LIGHTNING': this._buildSpriteProjectile(SpellTextures.fire_lightning, 3.5, 0xff4400); break;
+      case 'ICE_LIGHTNING': this._buildSpriteProjectile(SpellTextures.ice_lightning, 3.5, 0x44ccff); break;
       default:          this._buildGeneric();  break;
     }
+  }
+
+  _buildSpriteProjectile(tex, size, color) {
+    const spriteMat = new THREE.SpriteMaterial({
+      map: tex, transparent: true,
+      blending: THREE.AdditiveBlending, depthWrite: false, color: color || 0xffffff
+    });
+    this.sprite = new THREE.Sprite(spriteMat);
+    this.sprite.scale.set(size, size, 1);
+    this.mesh.add(this.sprite);
+
+    this.light = new THREE.PointLight(color, 6, 14);
+    this.mesh.add(this.light);
   }
 
   _buildFireball() {
@@ -265,6 +295,36 @@ class Projectile {
         }
       }
     }
+
+    if (this.spellName === 'FIRE_ICE' || this.spellName === 'FIRE_TORNADO' || this.spellName === 'ICE_TORNADO' || this.spellName === 'FIRE_LIGHTNING' || this.spellName === 'ICE_LIGHTNING') {
+      if (this.sprite) {
+        if (this.spellName.includes('TORNADO')) {
+           this.sprite.material.rotation += delta * 2;
+        } else {
+           const pulse = 1 + Math.sin(Date.now() * 0.015) * 0.12;
+           this.sprite.scale.setScalar((this.spellName.includes('LIGHTNING') ? 3.5 : (this.spellName.includes('TORNADO') ? 4.0 : 3.0)) * pulse);
+        }
+      }
+      this._trailTimer = (this._trailTimer || 0) - delta;
+      if (this._trailTimer <= 0) {
+        this._trailTimer = 0.05;
+        if (this.spellName.includes('FIRE')) Particles.burstFire(this.mesh.position.clone(), 4);
+        if (this.spellName.includes('ICE')) Particles.burstFrost(this.mesh.position.clone(), 4);
+      }
+      
+      if (this.spellName.includes('TORNADO') && typeof Game !== 'undefined') {
+        let nearest = null, bestDist = Infinity;
+        Game.enemies.forEach(e => {
+          if (!e.alive) return;
+          const d = this.mesh.position.distanceTo(e.mesh.position);
+          if (d < bestDist) { bestDist = d; nearest = e; }
+        });
+        if (nearest && bestDist < 20) {
+          const toEnemy = nearest.mesh.position.clone().sub(this.mesh.position).normalize();
+          this.velocity.lerp(toEnemy.multiplyScalar(this.spell.speed), delta * 1.5);
+        }
+      }
+    }
   }
 
   destroy() {
@@ -317,7 +377,10 @@ class SpellManager {
       Particles.burst(player.mesh.position, spell.color, 100, 8);
       return true;
     }
-    if (name === 'LIGHTNING') { this._castLightning(spell, player, facingDir); return true; }
+    if (name === 'LIGHTNING' || name === 'FIRE_LIGHTNING' || name === 'ICE_LIGHTNING') { 
+      this._castLightning(name, spell, player, facingDir); 
+      return true; 
+    }
 
     const origin = player.mesh.position.clone().add(new THREE.Vector3(0, 2.2, 0));
     const dir    = facingDir.clone(); dir.y = 0;
@@ -337,7 +400,7 @@ class SpellManager {
     return true;
   }
 
-  _castLightning(spell, player, facingDir) {
+  _castLightning(name, spell, player, facingDir) {
     const origin = player.mesh.position.clone().add(new THREE.Vector3(0, 2.2, 0));
     const fwd    = facingDir.clone(); fwd.y = 0; fwd.normalize();
 
@@ -359,8 +422,15 @@ class SpellManager {
       UI.showDamageNumber(bestEnemy.mesh.position, spell.damage, spell.color);
       Particles.lightning(origin, hitPos, spell.color);
       Game.addScore(20);
+
+      if (name === 'FIRE_LIGHTNING' || name === 'ICE_LIGHTNING') {
+        const proj = new Projectile(name, hitPos, fwd, this.scene);
+        proj.velocity.set(0,0,0);
+        proj.lifetime = 0.4;
+        this.projectiles.push(proj);
+      }
     } else {
-      const proj = new Projectile('LIGHTNING', origin, fwd, this.scene);
+      const proj = new Projectile(name, origin, fwd, this.scene);
       proj.velocity = fwd.multiplyScalar(50); proj.lifetime = 0.5;
       this.projectiles.push(proj);
     }
@@ -381,7 +451,7 @@ class SpellManager {
           UI.showDamageNumber(enemy.mesh.position, dmg, proj.spell.color);
 
           // Spell-specific hit effects
-          if (proj.spellName === 'FIREBALL') {
+          if (proj.spellName === 'FIREBALL' || proj.spellName === 'FIRE_ICE') {
             Particles.burstFire(proj.mesh.position.clone(), 80);
             Particles.ring(proj.mesh.position.clone(), 0xff4400, 4);
             // AOE
@@ -391,10 +461,14 @@ class SpellManager {
                 e2.takeDamage(Math.floor(dmg * 0.5));
               }
             });
+            if (proj.spellName === 'FIRE_ICE') {
+               Particles.burstFrost(proj.mesh.position.clone(), 50);
+               Particles.iceShatter(proj.mesh.position.clone());
+            }
           } else if (proj.spellName === 'ICE_SHARD') {
             Particles.burstFrost(proj.mesh.position.clone(), 60);
             Particles.iceShatter(proj.mesh.position.clone());
-          } else if (proj.spellName === 'TORNADO') {
+          } else if (proj.spellName.includes('TORNADO')) {
             enemies.forEach(e2 => {
               if (!e2.alive) return;
               const d = e2.mesh.position.distanceTo(proj.mesh.position);
@@ -403,7 +477,7 @@ class SpellManager {
                 e2.mesh.position.add(pull.multiplyScalar(0.05));
               }
             });
-            Particles.burst(proj.mesh.position, 0x00ff88, 40, 6);
+            Particles.burst(proj.mesh.position, proj.spell.color, 40, 6);
           } else {
             Particles.burst(proj.mesh.position, proj.spell.color, 35, 4);
           }

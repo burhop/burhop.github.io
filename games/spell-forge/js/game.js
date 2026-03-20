@@ -79,9 +79,16 @@ const Game = {
 
     window.addEventListener('keydown', (e) => {
       if (this.state !== 'PLAYING') return;
+      if (e.code === 'Escape') { this.pause(); return; }
+      
       const keyMap = { Digit1:'FIREBALL', Digit2:'ICE_SHARD', Digit3:'LIGHTNING', Digit4:'SHIELD', Digit5:'TORNADO' };
-      if (keyMap[e.code]) this._castSpell(keyMap[e.code]);
-      if (e.code === 'Escape') this.pause();
+      const spellName = keyMap[e.code];
+      if (spellName) {
+        if (!this._spellQueue) this._spellQueue = new Set();
+        this._spellQueue.add(spellName);
+        if (this._spellTimer) clearTimeout(this._spellTimer);
+        this._spellTimer = setTimeout(() => { this._processSpellQueue(); }, 60);
+      }
     });
 
     window.addEventListener('mousedown', (e) => {
@@ -147,7 +154,13 @@ const Game = {
         el.addEventListener('pointerdown', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (this.state === 'PLAYING') this._castSpell(spellNames[i]);
+          if (this.state === 'PLAYING') {
+            const spellName = spellNames[i];
+            if (!this._spellQueue) this._spellQueue = new Set();
+            this._spellQueue.add(spellName);
+            if (this._spellTimer) clearTimeout(this._spellTimer);
+            this._spellTimer = setTimeout(() => { this._processSpellQueue(); }, 60);
+          }
         });
       }
     }
@@ -390,6 +403,28 @@ const Game = {
     if (this.state !== 'PLAYING' || !this.player || !this.player.isAlive) return;
     const spellName = GESTURE_MAP[gesture];
     if (spellName) this._castSpell(spellName);
+  },
+
+  _processSpellQueue() {
+    if (!this._spellQueue || this._spellQueue.size === 0) return;
+    const spells = Array.from(this._spellQueue);
+    this._spellQueue.clear();
+
+    const has = (name) => spells.includes(name);
+    let combo = null;
+    if (has('FIREBALL') && has('ICE_SHARD')) combo = 'FIRE_ICE';
+    else if (has('FIREBALL') && has('TORNADO')) combo = 'FIRE_TORNADO';
+    else if (has('ICE_SHARD') && has('TORNADO')) combo = 'ICE_TORNADO';
+    else if (has('FIREBALL') && has('LIGHTNING')) combo = 'FIRE_LIGHTNING';
+    else if (has('ICE_SHARD') && has('LIGHTNING')) combo = 'ICE_LIGHTNING';
+
+    if (combo) {
+      if (typeof Game !== 'undefined' && Game.player) Game._castSpell(combo);
+    } else {
+      spells.forEach(s => {
+         if (typeof Game !== 'undefined' && Game.player) Game._castSpell(s);
+      });
+    }
   },
 
   _castSpell(name) {

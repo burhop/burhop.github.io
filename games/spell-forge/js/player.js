@@ -43,6 +43,7 @@ class Player {
     this.spriteW = 3.5;
     this.sprite.scale.set(this.spriteW, 4.8, 1);
     this.sprite.position.y = 2.4;
+    this.sprite.renderOrder = 10; // ensures the wizard renders in front of the shield
     this.mesh.add(this.sprite);
 
     // ── Shadow ellipse on floor ───────────────────────
