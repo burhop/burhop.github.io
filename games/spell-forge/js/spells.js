@@ -23,11 +23,11 @@ SpellTextures.fireball = loader.load('img/fireball.png');
 SpellTextures.iceshard = loader.load('img/iceshard.png');
 
 // Combo overrides
-SpellTextures.fire_ice = loader.load('img/fire_ice_projectile.png');
-SpellTextures.fire_tornado = loader.load('img/fire_tornado.png');
-SpellTextures.ice_tornado = loader.load('img/ice_tornado.png');
-SpellTextures.fire_lightning = loader.load('img/fire_lightning.png');
-SpellTextures.ice_lightning = loader.load('img/ice_lightning.png');
+SpellTextures.fire_ice = SpriteLoader.load('img/fire_ice_projectile.png');
+SpellTextures.fire_tornado = SpriteLoader.load('img/fire_tornado.png');
+SpellTextures.ice_tornado = SpriteLoader.load('img/ice_tornado.png');
+SpellTextures.fire_lightning = SpriteLoader.load('img/fire_lightning.png');
+SpellTextures.ice_lightning = SpriteLoader.load('img/ice_lightning.png');
 
 // ══════════════════════════════════════════════════════════════
 // Projectile
@@ -298,12 +298,8 @@ class Projectile {
 
     if (this.spellName === 'FIRE_ICE' || this.spellName === 'FIRE_TORNADO' || this.spellName === 'ICE_TORNADO' || this.spellName === 'FIRE_LIGHTNING' || this.spellName === 'ICE_LIGHTNING') {
       if (this.sprite) {
-        if (this.spellName.includes('TORNADO')) {
-           this.sprite.material.rotation += delta * 2;
-        } else {
-           const pulse = 1 + Math.sin(Date.now() * 0.015) * 0.12;
-           this.sprite.scale.setScalar((this.spellName.includes('LIGHTNING') ? 3.5 : (this.spellName.includes('TORNADO') ? 4.0 : 3.0)) * pulse);
-        }
+        const pulse = 1 + Math.sin(Date.now() * 0.015) * 0.12;
+        this.sprite.scale.setScalar((this.spellName.includes('LIGHTNING') ? 3.5 : (this.spellName.includes('TORNADO') ? 4.0 : 3.0)) * pulse);
       }
       this._trailTimer = (this._trailTimer || 0) - delta;
       if (this._trailTimer <= 0) {

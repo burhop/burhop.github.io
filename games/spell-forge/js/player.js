@@ -43,7 +43,6 @@ class Player {
     this.spriteW = 3.5;
     this.sprite.scale.set(this.spriteW, 4.8, 1);
     this.sprite.position.y = 2.4;
-    this.sprite.renderOrder = 10; // ensures the wizard renders in front of the shield
     this.mesh.add(this.sprite);
 
     // ── Shadow ellipse on floor ───────────────────────
@@ -73,17 +72,19 @@ class Player {
 
     // ── Shield sphere ─────────────────────────────────
     this.shieldMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(2.2, 24, 24),
+      new THREE.SphereGeometry(2.86, 24, 24),
       new THREE.MeshBasicMaterial({ color:0x9933ff, transparent:true, opacity:0.0, wireframe:true, blending:THREE.AdditiveBlending, depthWrite:false })
     );
     this.shieldMesh.position.y = 2.0;
+    this.shieldMesh.renderOrder = 20; // overlay the wizard
     this.mesh.add(this.shieldMesh);
 
     this.shieldOuter = new THREE.Mesh(
-      new THREE.SphereGeometry(2.35, 24, 24),
+      new THREE.SphereGeometry(3.05, 24, 24),
       new THREE.MeshBasicMaterial({ color:0xbb66ff, transparent:true, opacity:0.0, side:THREE.BackSide, blending:THREE.AdditiveBlending, depthWrite:false })
     );
     this.shieldOuter.position.y = 2.0;
+    this.shieldOuter.renderOrder = 20; // overlay the wizard
     this.mesh.add(this.shieldOuter);
 
     // ── Staff tip light ───────────────────────────────
