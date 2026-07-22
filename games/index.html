@@ -199,6 +199,45 @@
     .thumb-green   { background: linear-gradient(135deg, #052e16, #065f46); }
     .thumb-indigo  { background: linear-gradient(135deg, #1e1b4b, #312e81); }
 
+    .stellar-thumb,
+    .game-card[href="stellar-forge.html"] .card-thumb-placeholder {
+      position: relative;
+      overflow: hidden;
+      color: transparent;
+      background:
+        radial-gradient(circle at 72% 22%, #ffffffaa 0 1px, transparent 2px),
+        radial-gradient(circle at 18% 34%, #ffffff80 0 1px, transparent 2px),
+        radial-gradient(circle at 86% 70%, #ffffff70 0 1px, transparent 2px),
+        radial-gradient(ellipse at 50% 55%, #493a8850, transparent 54%),
+        linear-gradient(145deg, #050716, #10143a 58%, #060712);
+    }
+    .stellar-thumb::before,
+    .game-card[href="stellar-forge.html"] .card-thumb-placeholder::before {
+      content: '';
+      position: absolute;
+      width: 68px;
+      height: 68px;
+      left: 50%;
+      top: 50%;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle at 35% 30%, #fff9c9 0 5%, #ffc15d 28%, #ff7448 70%, #b32e4a 100%);
+      box-shadow: 0 0 28px #ff9b4f99, 0 0 75px #ff6f4a55;
+    }
+    .stellar-thumb::after,
+    .game-card[href="stellar-forge.html"] .card-thumb-placeholder::after {
+      content: '';
+      position: absolute;
+      width: 210px;
+      height: 70px;
+      left: 50%;
+      top: 50%;
+      border: 1px solid #6decff66;
+      border-radius: 50%;
+      transform: translate(-50%, -50%) rotate(-12deg);
+      box-shadow: 64px -2px 0 -31px #6decff, 64px -2px 16px -27px #6decff88;
+    }
+
     /* Tag pill */
     .card-tag {
       position: absolute;
@@ -322,16 +361,16 @@
       </div>
     </a>
 
-    <!-- PLACEHOLDER CARD 3 -->
-    <div class="game-card card-coming">
-      <div class="card-thumb-placeholder thumb-pink">🔥</div>
-      <span class="card-tag">COMING SOON</span>
+    <!-- STELLAR FORGE -->
+    <a class="game-card" href="stellar-forge.html">
+      <div class="card-thumb-placeholder stellar-thumb" role="img" aria-label="A glowing young solar system"></div>
+      <span class="card-tag" style="color:#f472b6">NEW</span>
       <div class="card-body">
-        <div class="card-title">Game Slot #3</div>
-        <div class="card-desc">Something awesome is being built for this spot. Check back soon!</div>
-        <div class="card-cta">Coming Soon →</div>
+        <div class="card-title">Stellar Forge</div>
+        <div class="card-desc">Create a solar system from dust in a live gravity sandbox. Bend time, collide worlds, capture moons, and unleash black holes.</div>
+        <div class="card-cta">Open the Lab →</div>
       </div>
-    </div>
+    </a>
 
   </div>
 
