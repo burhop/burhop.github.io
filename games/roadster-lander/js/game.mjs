@@ -10,6 +10,7 @@ const keys = new Set();
 const emptyThrust = { lift: 0, side: 0 };
 let renderer, width = 0, height = 0, accumulator = 0, lastTime = 0, hudTime = 0;
 let zoom = 1, visualTurn = 0, visualBank = 0, reportAt = 0, flightMessage = '';
+let facingDirection = 1, visualFacing = 1;
 let best = 0;
 try { best = Number(localStorage.getItem('roadster-lander-best')) || 0; } catch { /* Private browsing may disable storage. */ }
 
@@ -32,6 +33,7 @@ function start(mission = 1, score = 0) {
   if (!game.ready || game.portrait || $('credits').open) return;
   resetVisuals();
   game.state = createFlight(mission, score);
+  facingDirection = visualFacing = game.state.level.pad.center < game.state.x ? -1 : 1;
   game.state.status = 'flying';
   game.mode = 'flight';
   $('intro').hidden = true;
@@ -265,6 +267,11 @@ function frame(milliseconds) {
   const approach = game.mode === 'title' ? 0 : approachProgress(s);
   const smooth = 1 - Math.exp(-dt * 4);
   if (game.mode !== 'paused') {
+    // Face the driveway, retaining the approach side while directly above it.
+    // Turn smoothly if the pilot overshoots and approaches from the other side.
+    if (s.x < s.level.pad.left) facingDirection = 1;
+    else if (s.x > s.level.pad.right) facingDirection = -1;
+    visualFacing += (facingDirection - visualFacing) * smooth;
     zoom += (1 + approach * 1.6 - zoom) * smooth;
     visualTurn += (approach - visualTurn) * smooth;
     const bankTarget = game.mode === 'flight' && s.status === 'flying' ? -s.thrust.side * .075 - clamp(s.vx * .0018, -.045, .045) : 0;
@@ -278,6 +285,7 @@ function frame(milliseconds) {
     renderer.draw({ x: hero ? width * .72 : v.x(s.x), y: hero ? height * .54 : v.y(s.z),
       scale: hero ? Math.min(width * .285, 400) / 44 : v.scale,
       turn: hero ? .42 : visualTurn, bank: hero ? .015 : visualBank,
+      facing: visualFacing,
       thrust: activeThrust, time, visible: !hero && s.status !== 'crashed', showJets: !hero });
   }
   audio.thrust(activeThrust.lift + Math.abs(activeThrust.side) * .45);

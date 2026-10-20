@@ -124,16 +124,16 @@ export class VehicleRenderer {
     this.camera.updateProjectionMatrix();
   }
 
-  draw({ x, y, scale, turn, bank = 0, thrust, time, visible = true, showJets = true }) {
+  draw({ x, y, scale, turn, facing = 1, bank = 0, thrust, time, visible = true, showJets = true }) {
     this.rig.visible = visible && this.ready;
     this.rig.position.set(x, this.height - y, 0);
     this.rig.scale.setScalar(scale);
     this.rig.rotation.z = bank;
-    const yaw = (1 - turn) * Math.PI / 2;
+    const yaw = facing * (1 - turn) * Math.PI / 2;
     this.yaw.rotation.y = yaw;
     // A slight elevated view reveals the hood and roof while the tyres meet the ground.
     this.yaw.rotation.x = .12;
-    this.yaw.position.y = Math.sin(.12) * (VEHICLE.length / 2 * Math.cos(yaw) + VEHICLE.width / 2 * Math.sin(yaw));
+    this.yaw.position.y = Math.sin(.12) * (VEHICLE.length / 2 * Math.abs(Math.cos(yaw)) + VEHICLE.width / 2 * Math.abs(Math.sin(yaw)));
     const sideExtent = Math.hypot(VEHICLE.length / 2 * Math.sin(yaw), VEHICLE.width / 2 * Math.cos(yaw)) * .98;
     this.yaw.updateMatrix();
     for (let i = 0; i < this.jets.length; i++) {
