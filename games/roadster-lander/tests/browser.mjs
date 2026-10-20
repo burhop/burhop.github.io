@@ -46,12 +46,11 @@ try {
   await page.click('#resume'); await page.waitForTimeout(150);
   assert.equal((await state()).thrust.lift, 0, 'no stuck key on resume');
   await page.setViewportSize({ width: 540, height: 900 });
-  await page.waitForTimeout(100); assert.equal(await page.locator('#orientation').isVisible(), true);
-  const portrait = await state(); assert.equal(portrait.mode, 'paused');
-  await page.waitForTimeout(150); assert.equal((await state()).elapsed, portrait.elapsed);
+  await page.waitForTimeout(100); assert.equal(await page.locator('#touch-controls').isVisible(), true);
+  const portrait = await state(); assert.equal(portrait.mode, 'flight');
+  await page.waitForTimeout(150); assert.ok((await state()).elapsed > portrait.elapsed);
   await page.screenshot({ path: `${output}/portrait.png` });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.click('#resume');
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   assert.equal((await state()).mode, 'paused');
   await page.click('#restart');
@@ -89,7 +88,7 @@ try {
   await page.screenshot({ path: `${output}/approach.png` });
   await page.setViewportSize({ width: 844, height: 390 });
   await page.screenshot({ path: `${output}/small-landscape.png` });
-  assert.equal(await page.locator('#orientation').isVisible(), false);
+  assert.equal((await state()).portrait, false);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   await page.reload(); await page.waitForFunction(() => document.querySelector('#start').textContent.includes('START DESCENT'));
   await page.screenshot({ path: `${output}/small-title.png` });

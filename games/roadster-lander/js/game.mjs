@@ -7,6 +7,8 @@ const canvas = $('terrain');
 const ctx = canvas.getContext('2d');
 const audio = new ArcadeAudio();
 const keys = new Set();
+const touchPointers = new Map();
+const touchLayout = () => matchMedia('(pointer: coarse), (orientation: portrait)').matches;
 const emptyThrust = { lift: 0, side: 0 };
 let renderer, width = 0, height = 0, accumulator = 0, lastTime = 0, hudTime = 0;
 let zoom = 1, visualTurn = 0, visualBank = 0, reportAt = 0, flightMessage = '';
@@ -18,7 +20,7 @@ try { best = Number(localStorage.getItem('roadster-lander-best')) || 0; } catch 
 export const game = { state: createFlight(), mode: 'title', ready: false, portrait: false, start, pause, resume };
 
 function resetVisuals() {
-  keys.clear();
+  clearInput();
   accumulator = 0;
   visualTurn = 0;
   visualBank = 0;
@@ -30,7 +32,7 @@ function resetVisuals() {
 }
 
 function start(mission = 1, score = 0) {
-  if (!game.ready || game.portrait || $('credits').open) return;
+  if (!game.ready || $('credits').open) return;
   resetVisuals();
   game.state = createFlight(mission, score);
   facingDirection = visualFacing = game.state.level.pad.center < game.state.x ? -1 : 1;
@@ -38,6 +40,7 @@ function start(mission = 1, score = 0) {
   game.mode = 'flight';
   $('intro').hidden = true;
   $('title-photo').hidden = true;
+  $('touch-controls').hidden = false;
   $('pause').disabled = false;
   $('pause').textContent = 'PAUSE';
   $('start').blur();
@@ -52,6 +55,7 @@ function title() {
   game.state = createFlight();
   $('intro').hidden = false;
   $('title-photo').hidden = false;
+  $('touch-controls').hidden = true;
   $('pause').disabled = true;
   updateHUD();
   $('start').focus({ preventScroll: true });
@@ -60,7 +64,8 @@ function title() {
 function pause() {
   if (game.mode !== 'flight' || game.state.status !== 'flying') return;
   game.mode = 'paused';
-  keys.clear();
+  clearInput();
+  $('touch-controls').hidden = true;
   accumulator = 0;
   audio.thrust(0);
   $('pause-screen').hidden = false;
@@ -70,8 +75,9 @@ function pause() {
 }
 
 function resume() {
-  if (game.mode !== 'paused' || game.portrait || $('credits').open) return;
-  keys.clear();
+  if (game.mode !== 'paused' || $('credits').open) return;
+  clearInput();
+  $('touch-controls').hidden = false;
   accumulator = 0;
   game.mode = 'flight';
   $('pause-screen').hidden = true;
@@ -89,13 +95,18 @@ function resize() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   renderer?.resize(width, height);
   game.portrait = height > width;
-  $('orientation').hidden = !game.portrait;
-  if (game.portrait) pause();
+}
+
+function clearInput() {
+  keys.clear();
+  touchPointers.clear();
+  document.querySelectorAll('[data-thrust]').forEach(button => button.classList.remove('pressed'));
 }
 
 function input() {
-  return { up: keys.has('ArrowUp') || keys.has('Space') || keys.has('KeyW'),
-    left: keys.has('ArrowLeft') || keys.has('KeyA'), right: keys.has('ArrowRight') || keys.has('KeyD') };
+  const held = new Set(touchPointers.values());
+  return { up: held.has('up') || keys.has('ArrowUp') || keys.has('Space') || keys.has('KeyW'),
+    left: held.has('left') || keys.has('ArrowLeft') || keys.has('KeyA'), right: held.has('right') || keys.has('ArrowRight') || keys.has('KeyD') };
 }
 
 function updateHUD() {
@@ -125,7 +136,7 @@ function updateHUD() {
         const safe = Math.abs(s.vx) <= PHYSICS.safeHorizontal && Math.abs(s.vz) <= PHYSICS.safeVertical;
         message = aligned && safe ? 'LOOKING GOOD · BRING IT HOME' : 'FINAL APPROACH · EASY ON THE THRUST';
       }
-      if (s.elapsed < 5) message = 'ARROW KEYS TO THRUST · COUNTER YOUR MOMENTUM';
+      if (s.elapsed < 5) message = touchLayout() ? 'HOLD BUTTONS TO THRUST · RELEASE TO COAST' : 'ARROW KEYS TO THRUST · COUNTER YOUR MOMENTUM';
     }
   }
   $('flight-status').textContent = status;
@@ -135,7 +146,8 @@ function updateHUD() {
 function finish(time) {
   if (reportAt) return;
   reportAt = time + (game.state.status === 'landed' ? .9 : 1.2);
-  keys.clear();
+  clearInput();
+  $('touch-controls').hidden = true;
   $('pause').disabled = true;
   audio.thrust(0);
   const landed = game.state.status === 'landed';
@@ -166,13 +178,24 @@ function showReport() {
 }
 
 function view() {
-  const baseScale = Math.min(width / 1040, (height - (height < 650 ? 155 : 205)) / 445);
-  const scale = Math.max(.3, baseScale) * zoom;
   const pad = game.state.level.pad;
+  if (game.portrait) {
+    // Fit the car and driveway together, using the space between HUD and thumbs.
+    const availableHeight = Math.max(100, height - 370);
+    const baseScale = Math.min((width - 36) / Math.max(360, Math.abs(game.state.x - pad.center) + 180),
+      availableHeight / (Math.max(160, game.state.z - pad.z) + 80));
+    const scale = baseScale * zoom;
+    const center = (pad.center + game.state.x) / 2;
+    const floor = height - 150;
+    return { scale, x: x => width / 2 + (x - center) * scale, y: z => floor - (z - pad.z) * scale };
+  }
+  const bottomSpace = touchLayout() ? 135 : (height < 650 ? 65 : 90);
+  const baseScale = Math.min(width / 1040, (height - (touchLayout() ? 250 : (height < 650 ? 155 : 205))) / 445);
+  const scale = Math.max(.3, baseScale) * zoom;
   const focus = clamp(pad.center * .7 + game.state.x * .3, 180, 820);
   const center = 500 + (focus - 500) * (zoom - 1) / 1.6;
   const originX = width / 2 - center * scale;
-  const originY = height - (height < 650 ? 65 : 90) + pad.z * (scale - baseScale);
+  const originY = height - bottomSpace + pad.z * (scale - baseScale);
   return { scale, x: x => originX + x * scale, y: z => originY - z * scale };
 }
 
@@ -218,7 +241,7 @@ function drawTerrain(time, v) {
   ctx.font = '9px "Courier New", monospace';
   ctx.textAlign = 'center'; ctx.fillStyle = '#b5bdb0';
   ctx.fillText(`DRIVEWAY ${String(s.level.mission).padStart(2, '0')}`, (left + right) / 2, y + depth + 18);
-  if (game.mode === 'title' && height > 520) {
+  if (game.mode === 'title' && height > 520 && !game.portrait) {
     ctx.font = '9px "Courier New", monospace'; ctx.fillStyle = '#9ca597';
     ctx.fillText('TESLA ROADSTER / LUNAR EDITION', width * .72, height * .54 + Math.min(width * .075, 110));
     ctx.fillStyle = '#626b60'; ctx.font = '8px "Courier New", monospace';
@@ -255,7 +278,7 @@ function frame(milliseconds) {
   const dt = Math.min(.05, lastTime ? time - lastTime : 0);
   lastTime = time;
   const s = game.state;
-  if (game.mode === 'flight' && !game.portrait && s.status === 'flying') {
+  if (game.mode === 'flight' && s.status === 'flying') {
     accumulator += dt;
     while (accumulator >= PHYSICS.step) {
       stepFlight(s, input());
@@ -298,10 +321,8 @@ async function fullscreen() {
     if (document.fullscreenElement) await document.exitFullscreen();
     else {
       await $('arcade').requestFullscreen();
-      // Browsers that allow a landscape lock can enforce it; all others get the overlay.
-      try { await screen.orientation?.lock?.('landscape'); } catch { /* Landscape overlay remains active. */ }
     }
-  } catch { $('load-status').textContent = 'Fullscreen is unavailable. Widen this window to play.'; }
+  } catch { $('load-status').textContent = 'Fullscreen is unavailable. You can play in this window.'; }
 }
 
 async function toggleSound() {
@@ -331,7 +352,22 @@ window.addEventListener('keydown', event => {
   if (event.code === 'KeyF') fullscreen();
 });
 window.addEventListener('keyup', event => keys.delete(event.code));
-window.addEventListener('blur', () => { keys.clear(); pause(); });
+for (const button of document.querySelectorAll('[data-thrust]')) {
+  button.addEventListener('pointerdown', event => {
+    if (game.mode !== 'flight' || game.state.status !== 'flying') return;
+    event.preventDefault();
+    button.setPointerCapture(event.pointerId);
+    touchPointers.set(event.pointerId, button.dataset.thrust);
+    button.classList.add('pressed');
+  });
+  const release = event => {
+    touchPointers.delete(event.pointerId);
+    button.classList.toggle('pressed', [...touchPointers.values()].includes(button.dataset.thrust));
+  };
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(event, release);
+  button.addEventListener('contextmenu', event => event.preventDefault());
+}
+window.addEventListener('blur', () => { clearInput(); pause(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { keys.clear(); pause(); } });
 window.addEventListener('resize', resize);
 $('start').addEventListener('click', () => start());
@@ -364,7 +400,7 @@ try {
   game.ready = true;
   $('start').disabled = false;
   $('start').innerHTML = 'START DESCENT <span>↗</span>';
-  $('load-status').textContent = 'PRESS ENTER TO BEGIN · KEYBOARD REQUIRED';
+  $('load-status').textContent = 'TAP START OR PRESS ENTER TO BEGIN';
 } catch (error) {
   console.error('Roadster initialization failed:', error);
   $('start').textContent = 'RELOAD GAME ↻';

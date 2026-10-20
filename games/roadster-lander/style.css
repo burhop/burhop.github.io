@@ -55,10 +55,10 @@ h2 { font: bold clamp(23px, 3vw, 38px)/1.1 Arial, sans-serif; letter-spacing: -1
 .result-stats span { display: block; color: var(--muted); font-size: 8px; letter-spacing: 1px; margin-bottom: 7px; }
 .result > .text-button, .pause-screen > .text-button { display: block; margin: 18px auto 0; }
 .pause-screen .primary { margin-top: 20px; }
-.orientation { position: absolute; inset: 0; background: #050607; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
-.orientation p { color: var(--muted); line-height: 1.8; }
-.orientation h2 { font-size: 36px; }
-.rotate-icon { font-size: 64px; margin-bottom: 35px; }
+.touch-controls { display: none; position: absolute; z-index: 4; bottom: max(54px, calc(env(safe-area-inset-bottom) + 44px)); left: 16px; right: 16px; justify-content: space-between; gap: 18px; }
+.touch-controls button { width: 90px; height: 64px; border: 1px solid #858d83; border-radius: 8px; background: #121612ed; font-size: 27px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.touch-controls button span { display: block; font-size: 9px; letter-spacing: 2px; }
+.touch-controls button.pressed { background: var(--ink); color: #050607; }
 dialog { background: #0b0d0c; border: 1px solid #686e67; color: var(--ink); max-width: 600px; width: calc(100% - 50px); padding: 32px; z-index: 30; }
 dialog::backdrop { background: #000c; }
 dialog p { color: #a8aea6; line-height: 1.8; font-size: 11px; }
@@ -108,3 +108,35 @@ dialog form { margin-top: 25px; }
   .start-hint { font-size: 8px; max-width: 260px; }
 }
 @media (prefers-reduced-motion: reduce) { .warning { animation: none; } .scanlines { display: none; } }
+@media (pointer: coarse), (orientation: portrait) {
+  .touch-controls { display: flex; }
+  .controls { display: none; }
+  .bottom-bar { min-height: 28px; bottom: max(10px, env(safe-area-inset-bottom)); justify-content: flex-end; }
+  nav button { min-height: 40px; }
+}
+@media (orientation: portrait) {
+  .topbar { left: 16px; right: 16px; height: 48px; font-size: 9px; letter-spacing: .5px; }
+  .edition { font-size: 8px; }
+  nav { gap: 12px; }
+  nav button { font-size: 9px; }
+  .telemetry { top: 62px; grid-template-columns: repeat(3, 1fr); gap: 12px 16px; }
+  .telemetry strong { font-size: 23px; line-height: 1.4; }
+  .mission .sub { white-space: normal; }
+  .intro { left: 8%; top: max(190px, 24%); }
+  .intro h1 { font-size: clamp(40px, 12vw, 62px); letter-spacing: -2px; }
+  .intro-copy { display: none; }
+  .intro .primary { margin-top: 20px; min-width: 230px; }
+  .start-hint { max-width: 270px; font-size: 8px; }
+  .title-photo { left: 8%; top: max(390px, 52%); width: 84%; }
+  .flight-message { top: 207px; padding: 0 12px; font-size: 8px; letter-spacing: .6px; }
+  .result, .pause-screen { top: 49%; width: 92%; padding: 22px 16px; }
+  .result-stats { gap: 8px; font-size: 10px; }
+  dialog { padding: 22px; max-height: 85dvh; overflow: auto; }
+}
+@media (orientation: portrait) and (max-height: 700px) {
+  .intro { top: 184px; }
+  .intro .eyebrow { display: none; }
+  .intro h1 { font-size: 40px; }
+  .intro .primary { margin-top: 14px; padding: 12px 16px; }
+  .title-photo { top: 355px; }
+}

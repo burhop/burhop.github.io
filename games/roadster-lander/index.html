@@ -90,12 +90,11 @@
       <div class="footer-right"><span id="flight-status">AWAITING PILOT</span><button id="credits-open" class="text-button">CREDITS</button></div>
     </footer>
 
-    <section id="orientation" class="orientation" aria-labelledby="orientation-title" hidden>
-      <span class="rotate-icon" aria-hidden="true">▯ ↻ ▭</span>
-      <p class="eyebrow">A WIDER VIEW OF THE MOON</p>
-      <h2 id="orientation-title">GO LANDSCAPE.</h2>
-      <p>Rotate your display or widen this window to fly.<br>Keyboard controls required for this version.</p>
-    </section>
+    <div id="touch-controls" class="touch-controls" aria-label="Touch flight controls" hidden>
+      <button data-thrust="left" aria-label="Thrust left">←<span>LEFT</span></button>
+      <button data-thrust="up" aria-label="Thrust upward">↑<span>LIFT</span></button>
+      <button data-thrust="right" aria-label="Thrust right">→<span>RIGHT</span></button>
+    </div>
 
     <dialog id="credits">
       <p class="eyebrow">THE PEOPLE BEHIND THE RIDE</p>

@@ -12,7 +12,7 @@ From the **repository root**:
 python -m http.server 8080 --bind 127.0.0.1
 ```
 
-Open <http://127.0.0.1:8080/games/roadster-lander/> in a WebGL2-capable desktop browser. Serve over HTTP; ES modules and model loading do not work from `file://`.
+Open <http://127.0.0.1:8080/games/roadster-lander/> in a WebGL2-capable browser. Serve over HTTP; ES modules and model loading do not work from `file://`.
 
 From this directory, `npm run serve` serves the game at <http://127.0.0.1:8080/> instead.
 
@@ -24,8 +24,9 @@ From this directory, `npm run serve` serves the game at <http://127.0.0.1:8080/>
 - Park the entire contact footprint inside the driveway at **≤4.5 m/s vertical** and **≤3 m/s horizontal** speed. Touching other terrain crashes the vehicle.
 - Fuel is finite. Simultaneous lift and lateral thrust consume both engines' fuel. Empty tanks leave the vehicle coasting; a safe zero-fuel landing is still valid.
 - Successful landings award a base score plus fuel and gentle-landing bonuses. Three driveway layouts cycle, becoming narrower up to a fixed minimum width. Best score is stored locally when storage is available.
-- Landscape is required. Portrait windows show an overlay and pause flight. Returning to landscape requires an explicit resume. Losing window focus, hiding the tab, and opening credits also pause play and clear held keys.
-- Touch controls are deferred. The input adapter returns only `{up, left, right}`, so pointer controls can later feed the same simulation without changing physics.
+- Portrait and landscape are supported, including embedded browsers that cannot rotate. Portrait uses a compact two-row HUD and a camera that fits the car and driveway together. Rotating does not pause flight.
+- Touch screens and portrait windows show Left, Lift and Right buttons during flight. Hold to thrust and release to coast; multiple fingers can combine lift and lateral thrust. Pointer release, cancellation, pause and focus loss clear held controls.
+- Losing window focus, hiding the tab, and opening credits pause play. Resume explicitly to continue. Keyboard controls also remain available.
 
 ## Architecture and replacing the vehicle
 
