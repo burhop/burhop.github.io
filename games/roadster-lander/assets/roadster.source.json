@@ -1,0 +1,423 @@
+{
+  "schema_version": 1,
+  "document_id": "cb784919-1fe5-4a3a-a39d-a91fe59d781c",
+  "document_url": "https://stevecad.studio/?document=cb784919-1fe5-4a3a-a39d-a91fe59d781c",
+  "revision": 28,
+  "revision_label": "Main R28",
+  "native_build_id": "dd5438d9-ae89-4f3b-b14d-d7314e3beef4",
+  "source_manifest_sha256": "fd0a9f0c1d4a427bab6a18259ab32ab51edd8fffba6a0208f91d6beb6a850726",
+  "source_step_sha256": "69e3fce6ee288f2dac50d564b15772d19ab6732c637edd27b786f7adb675733b",
+  "source_frame": "design; placement already applied; never apply twice",
+  "source_bounds": {
+    "min": [
+      -3.251708662532424e-14,
+      -43.00497055053711,
+      0
+    ],
+    "max": [
+      201.24752807617188,
+      43.00497055053711,
+      53.635169982910156
+    ]
+  },
+  "axis_transform": "source (x, y, z) -> glTF (-y, z, -x); front +Z, up +Y",
+  "bounds": {
+    "min": [
+      -43.00497055053711,
+      0,
+      -201.24752807617188
+    ],
+    "max": [
+      43.00391387939453,
+      53.635169982910156,
+      3.251708662532424e-14
+    ]
+  },
+  "materials": [
+    "cad_silver_paint",
+    "cad_bronze_glazing",
+    "cad_roof_center_spine",
+    "cad_front_fascia",
+    "cad_rear_lower_aero",
+    "cad_rear_upper_aero",
+    "cad_lower_sill_splitter",
+    "cad_headlights",
+    "cad_taillight",
+    "cad_trim",
+    "cad_wheel_alloy",
+    "cad_side_marker",
+    "cad_rear_fascia",
+    "cad_plate",
+    "cad_highlighted_rims",
+    "cad_dark_centers",
+    "cad_tire",
+    "cad_silver_dished_structure",
+    "cad_black_split_spokes"
+  ],
+  "source_triangles": 1465428,
+  "triangles": 267690,
+  "settings": {
+    "target_ratio": 0.18,
+    "max_relative_simplifier_error": 0.0005,
+    "normal_crease_degrees": 30,
+    "position_quantization_bits": 16,
+    "normal_quantization_bits": 12
+  },
+  "appearance": "reference silver / opaque bronze smoked glazing",
+  "qualification": "Game visualization derived from the saved CAD study. Not a verified production design; no CAD source or live revision was modified.",
+  "parts": [
+    {
+      "name": "body",
+      "owner": "body",
+      "file": "mesh-00.stl",
+      "source_sha256": "023f2a8b4bf3fa822d1dd7dea4e3609379aae8f40b9afa9635ce0801feb81ed2",
+      "source_triangles": 526944,
+      "triangles": 94850,
+      "simplifier_error_relative_to_part": 0.00007155366620281711
+    },
+    {
+      "name": "windshield",
+      "owner": "windshield",
+      "file": "mesh-01.stl",
+      "source_sha256": "5f2e695b2b387ae4f4156b1ff7ae6433ae7268e53e79670698b4ee95c2a7b33b",
+      "source_triangles": 6910,
+      "triangles": 1244,
+      "simplifier_error_relative_to_part": 0.00037515474832616746
+    },
+    {
+      "name": "roof_glass__roof_panel_left",
+      "owner": "roof_glass",
+      "file": "mesh-02-body-00.stl",
+      "source_sha256": "efb2ea95535638d15795ae1311ef1ed0a40aaa27767c1aebb7b90aed7d6d3cf8",
+      "source_triangles": 1676,
+      "triangles": 600,
+      "simplifier_error_relative_to_part": 0.0002915415388997644
+    },
+    {
+      "name": "roof_glass__roof_panel_right",
+      "owner": "roof_glass",
+      "file": "mesh-02-body-01.stl",
+      "source_sha256": "df28c66d8c41afd3fb5193a5cf5ee1726af1ed6ddc58cfefae735994b6aa226e",
+      "source_triangles": 1690,
+      "triangles": 600,
+      "simplifier_error_relative_to_part": 0.00031112361466512084
+    },
+    {
+      "name": "roof_glass__roof_center_spine",
+      "owner": "roof_glass",
+      "file": "mesh-02-body-02.stl",
+      "source_sha256": "dd6ce85c42127059b2797ccc39fcef492fecc273d8390d3649c1a3ff789499ab",
+      "source_triangles": 886,
+      "triangles": 600,
+      "simplifier_error_relative_to_part": 0.00007824625208741054
+    },
+    {
+      "name": "rear_glass",
+      "owner": "rear_glass",
+      "file": "mesh-03.stl",
+      "source_sha256": "96b03c37870282cdcf918a4ce6aa513a83b56d3c92ba469f1089b3069465ce89",
+      "source_triangles": 3136,
+      "triangles": 604,
+      "simplifier_error_relative_to_part": 0.0004963955143466592
+    },
+    {
+      "name": "side_glass",
+      "owner": "side_glass",
+      "file": "mesh-04.stl",
+      "source_sha256": "306bb8c1083ba6cd39c4712235cba1c16e62f71fbcc9a7320f3ff92d668d5067",
+      "source_triangles": 2390,
+      "triangles": 600,
+      "simplifier_error_relative_to_part": 0.0002228414232376963
+    },
+    {
+      "name": "lower_aero__front_fascia",
+      "owner": "lower_aero",
+      "file": "mesh-05-body-00.stl",
+      "source_sha256": "542895d34f32b87f69a0f9630f3afd4f2d4513cf57db38df88fd3503f3961d15",
+      "source_triangles": 982,
+      "triangles": 600,
+      "simplifier_error_relative_to_part": 0.00007926516991574317
+    },
+    {
+      "name": "lower_aero__rear_lower_aero",
+      "owner": "lower_aero",
+      "file": "mesh-05-body-01.stl",
+      "source_sha256": "54c741e3e6ef1bf2723b7d2976d753b6a3ea77e8248664a2bedf2442905273f9",
+      "source_triangles": 35382,
+      "triangles": 6368,
+      "simplifier_error_relative_to_part": 0.00009148323442786932
+    },
+    {
+      "name": "lower_aero__rear_upper_aero",
+      "owner": "lower_aero",
+      "file": "mesh-05-body-02.stl",
+      "source_sha256": "fb4d5c577028715145293fe316e0412fc6b038cee470113f27ce786ee36827fe",
+      "source_triangles": 1578,
+      "triangles": 600,
+      "simplifier_error_relative_to_part": 0.0001161414256785065
+    },
+    {
+      "name": "lower_aero__lower_sill_splitter",
+      "owner": "lower_aero",
+      "file": "mesh-05-body-03.stl",
+      "source_sha256": "6cc18e030d7c0c4fb89bc97637a9b5f1b7b45e5e14e561b2b1e564c86968d121",
+      "source_triangles": 7052,
+      "triangles": 1268,
+      "simplifier_error_relative_to_part": 0.00008622658788226545
+    },
+    {
+      "name": "front_lamps",
+      "owner": "front_lamps",
+      "file": "mesh-06.stl",
+      "source_sha256": "047470e3469c2ed1a6fc700cb0272c5c0bfba8ffc512cdd3d56b0c431221e9a4",
+      "source_triangles": 764,
+      "triangles": 600,
+      "simplifier_error_relative_to_part": 0.000026903697289526463
+    },
+    {
+      "name": "rear_lamp",
+      "owner": "rear_lamp",
+      "file": "mesh-07.stl",
+      "source_sha256": "fc33d88823274a34b16c370272518dfcf0beb8664ff24793c949214669753629",
+      "source_triangles": 156,
+      "triangles": 156,
+      "simplifier_error_relative_to_part": 0
+    },
+    {
+      "name": "door_left",
+      "owner": "door_left",
+      "file": "mesh-08.stl",
+      "source_sha256": "002be9a68f386311b50b0a9e2c4cd8e0af0d9db035362118c9132ea38323f6d7",
+      "source_triangles": 70996,
+      "triangles": 12778,
+      "simplifier_error_relative_to_part": 0.00004422325946507044
+    },
+    {
+      "name": "door_right",
+      "owner": "door_right",
+      "file": "mesh-09.stl",
+      "source_sha256": "091193155bf10ccf835b34c80fde412c051c135b4b85c2f1b02a8f830eb146e9",
+      "source_triangles": 69788,
+      "triangles": 12562,
+      "simplifier_error_relative_to_part": 0.000048190722736762837
+    },
+    {
+      "name": "rear_airfoil",
+      "owner": "rear_airfoil",
+      "file": "mesh-10.stl",
+      "source_sha256": "b0767d0040ad886ef133283b45f6c8d437cb4675595de3b9303e8996ea40e23e",
+      "source_triangles": 44908,
+      "triangles": 8082,
+      "simplifier_error_relative_to_part": 0.0001509439171059057
+    },
+    {
+      "name": "bonnet_vent",
+      "owner": "bonnet_vent",
+      "file": "mesh-11.stl",
+      "source_sha256": "7788cce64b91d74f24b590690b63e5a8cb515b21e6e78df79a19bc6d8cc39bd1",
+      "source_triangles": 316,
+      "triangles": 316,
+      "simplifier_error_relative_to_part": 0
+    },
+    {
+      "name": "hood_panel",
+      "owner": "hood_panel",
+      "file": "mesh-12.stl",
+      "source_sha256": "07b259b79e35d9681623cab208f706f2ae44ca9cded71096ed5a3aa9f8255593",
+      "source_triangles": 2576,
+      "triangles": 600,
+      "simplifier_error_relative_to_part": 0.000277618266409263
+    },
+    {
+      "name": "side_trim_left",
+      "owner": "side_trim_left",
+      "file": "mesh-13.stl",
+      "source_sha256": "b3d8b7a423c0cbe2cd4e5e6e3645f608411edd95b16cfd64078e153e228377e3",
+      "source_triangles": 50,
+      "triangles": 50,
+      "simplifier_error_relative_to_part": 0
+    },
+    {
+      "name": "side_marker_left",
+      "owner": "side_marker_left",
+      "file": "mesh-14.stl",
+      "source_sha256": "5ce45dc873a78e0f0b308bbb763999f8c4b91a980bfdce2578dd5cb8e7c8e806",
+      "source_triangles": 20,
+      "triangles": 20,
+      "simplifier_error_relative_to_part": 0
+    },
+    {
+      "name": "side_trim_right",
+      "owner": "side_trim_right",
+      "file": "mesh-15.stl",
+      "source_sha256": "4563496c97c076cff8c92353f790ed6d22866d9ab503a307a2254151b2f3ca54",
+      "source_triangles": 50,
+      "triangles": 50,
+      "simplifier_error_relative_to_part": 0
+    },
+    {
+      "name": "side_marker_right",
+      "owner": "side_marker_right",
+      "file": "mesh-16.stl",
+      "source_sha256": "89b08e4c57b267abae700b8042bcb20a98c17b336f93d8638fbdd7dba59c8aa2",
+      "source_triangles": 20,
+      "triangles": 20,
+      "simplifier_error_relative_to_part": 0
+    },
+    {
+      "name": "rear_fascia_middle",
+      "owner": "rear_fascia_middle",
+      "file": "mesh-17.stl",
+      "source_sha256": "e6f7ef1154aed2294b18024a840d85e2d2037a36162881ae20f62af4036e3080",
+      "source_triangles": 744,
+      "triangles": 600,
+      "simplifier_error_relative_to_part": 0.000020563145881169476
+    },
+    {
+      "name": "front_edge_strip",
+      "owner": "front_edge_strip",
+      "file": "mesh-18.stl",
+      "source_sha256": "957aeaab7f5591db4daae81d7564b12eaa4accd54dca5febec8822502a1dac95",
+      "source_triangles": 442,
+      "triangles": 442,
+      "simplifier_error_relative_to_part": 0
+    },
+    {
+      "name": "rear_plate",
+      "owner": "rear_plate",
+      "file": "mesh-19.stl",
+      "source_sha256": "7af818932df87c928acf173f6c9c9166a7d300017e07e19ef43a0da8b398b406",
+      "source_triangles": 12,
+      "triangles": 12,
+      "simplifier_error_relative_to_part": 0
+    },
+    {
+      "name": "rear_insets__highlighted_rims",
+      "owner": "rear_insets",
+      "file": "mesh-20-body-00.stl",
+      "source_sha256": "0cfaa4ad458e74cac6e104f280b2f13af4d96c4f6f483ddb62ba0ffac0b5b2f5",
+      "source_triangles": 16096,
+      "triangles": 2896,
+      "simplifier_error_relative_to_part": 0.00010778479190776125
+    },
+    {
+      "name": "rear_insets__dark_centers",
+      "owner": "rear_insets",
+      "file": "mesh-20-body-01.stl",
+      "source_sha256": "24f5fd1d4d3a43f54bf802c7992c74f80cc9c56078ef407b21e1624be7eba4f2",
+      "source_triangles": 8032,
+      "triangles": 1446,
+      "simplifier_error_relative_to_part": 0.00014313239080365747
+    },
+    {
+      "name": "front_tire_left",
+      "owner": "front_tire_left",
+      "file": "mesh-21.stl",
+      "source_sha256": "379112d5e7486743adf6963dd8ee3063412ace5a2d83b32b7797d960ceaa1c40",
+      "source_triangles": 137592,
+      "triangles": 24766,
+      "simplifier_error_relative_to_part": 0.00015558952873107046
+    },
+    {
+      "name": "front_rim_left__silver_dished_structure",
+      "owner": "front_rim_left",
+      "file": "mesh-22-body-00.stl",
+      "source_sha256": "5614eabd98530f7fda3dc20d0963df0384ca3716d42d6658c974827ef007b20a",
+      "source_triangles": 14958,
+      "triangles": 2692,
+      "simplifier_error_relative_to_part": 0.00023524231801275164
+    },
+    {
+      "name": "front_rim_left__black_split_spokes",
+      "owner": "front_rim_left",
+      "file": "mesh-22-body-01.stl",
+      "source_sha256": "1b56d0847368a22aabd32eae6b3cb1843b6901418e5a80642a64ccf73ddef2d7",
+      "source_triangles": 12888,
+      "triangles": 2320,
+      "simplifier_error_relative_to_part": 0.00037533894646912813
+    },
+    {
+      "name": "rear_tire_left",
+      "owner": "rear_tire_left",
+      "file": "mesh-23.stl",
+      "source_sha256": "0f71f73acc024e9052003a8dc53eae2e335163046664e6a3e3eef5a18bef0d13",
+      "source_triangles": 137592,
+      "triangles": 24764,
+      "simplifier_error_relative_to_part": 0.00015251498552970588
+    },
+    {
+      "name": "rear_rim_left__silver_dished_structure",
+      "owner": "rear_rim_left",
+      "file": "mesh-24-body-00.stl",
+      "source_sha256": "fad3e57e253eb34c537d0f9b70605baea5c7cab7216a726984b517bca3e0da2c",
+      "source_triangles": 14998,
+      "triangles": 2700,
+      "simplifier_error_relative_to_part": 0.0002241814654553309
+    },
+    {
+      "name": "rear_rim_left__black_split_spokes",
+      "owner": "rear_rim_left",
+      "file": "mesh-24-body-01.stl",
+      "source_sha256": "58deb757893d303fb1372280098bca89cdba1d59ef636bd5d5b3bc6fc13ca0bf",
+      "source_triangles": 12888,
+      "triangles": 2320,
+      "simplifier_error_relative_to_part": 0.0003760472172871232
+    },
+    {
+      "name": "front_tire_right",
+      "owner": "front_tire_right",
+      "file": "mesh-25.stl",
+      "source_sha256": "9bdcf0b98c396e06fb26a8aa349c5bc70bbe0ecaa52f7d74656a6e93e2015409",
+      "source_triangles": 137592,
+      "triangles": 24766,
+      "simplifier_error_relative_to_part": 0.00015558952873107046
+    },
+    {
+      "name": "front_rim_right__silver_dished_structure",
+      "owner": "front_rim_right",
+      "file": "mesh-26-body-00.stl",
+      "source_sha256": "872f589f509bd6b3f0233cb7b6d98a4d506c7f9efeb5591a8092f208e897f895",
+      "source_triangles": 14958,
+      "triangles": 2692,
+      "simplifier_error_relative_to_part": 0.00023524231801275164
+    },
+    {
+      "name": "front_rim_right__black_split_spokes",
+      "owner": "front_rim_right",
+      "file": "mesh-26-body-01.stl",
+      "source_sha256": "cad4883f23cc11b70a1629e1526d27e25b7e09f90c50483a23137a98c64396b8",
+      "source_triangles": 12888,
+      "triangles": 2320,
+      "simplifier_error_relative_to_part": 0.00037533894646912813
+    },
+    {
+      "name": "rear_tire_right",
+      "owner": "rear_tire_right",
+      "file": "mesh-27.stl",
+      "source_sha256": "4772e45d8d7a7a8ee43b5f3d01db30cd871c06e13971c159acc0659cfa40da4f",
+      "source_triangles": 137592,
+      "triangles": 24766,
+      "simplifier_error_relative_to_part": 0.00015516225539613515
+    },
+    {
+      "name": "rear_rim_right__silver_dished_structure",
+      "owner": "rear_rim_right",
+      "file": "mesh-28-body-00.stl",
+      "source_sha256": "e90b9f2c2ef48b67351100c5303a4621c6660e562be962150a39a94271800a44",
+      "source_triangles": 14998,
+      "triangles": 2700,
+      "simplifier_error_relative_to_part": 0.0002241814654553309
+    },
+    {
+      "name": "rear_rim_right__black_split_spokes",
+      "owner": "rear_rim_right",
+      "file": "mesh-28-body-01.stl",
+      "source_sha256": "d9750eb02aef84e97be42bc67f092df02e506bab44f6b93db1f63ad9661d802a",
+      "source_triangles": 12888,
+      "triangles": 2320,
+      "simplifier_error_relative_to_part": 0.0003760472172871232
+    }
+  ],
+  "output_sha256": "572f6e77086aa5722929e90400f1acd5ebd6578b45f09b1a955c7a2ce99aa430",
+  "output_bytes": 1128732
+}

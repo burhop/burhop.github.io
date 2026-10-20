@@ -1,0 +1,20 @@
+{
+  "name": "roadster-lander",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/physics.test.mjs tests/model.test.mjs",
+    "build:model": "node scripts/build-roadster.mjs",
+    "capture:previews": "node scripts/capture-previews.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "serve": "python -m http.server 8080 --bind 127.0.0.1"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "4.2.1",
+    "@gltf-transform/extensions": "4.2.1",
+    "draco3d": "1.5.7",
+    "meshoptimizer": "0.25.0",
+    "playwright": "1.56.1",
+    "three": "0.170.0"
+  }
+}
